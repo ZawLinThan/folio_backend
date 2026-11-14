@@ -370,7 +370,23 @@ export const generateTest = async (
 export const getAllTests = async (
   req: Request,
   res: Response,
-): Promise<void> => {};
+): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  try {
+    const ownedTests = await db
+      .select()
+      .from(tests)
+      .where(eq(tests.userId, userId));
+    res.status(200).json(ownedTests.map(serialiseTest));
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 /**
  * GET /api/tests/:id
@@ -386,13 +402,41 @@ export const getAllTests = async (
 export const getSingleTestById = async (
   req: Request,
   res: Response,
-): Promise<void> => {};
+): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = uuidSchema.safeParse(req.params.id);
+  if (!id.success) {
+    res.status(400).json({ error: "Invalid test ID" });
+    return;
+  }
+
+  try {
+    const [test] = await db
+      .select()
+      .from(tests)
+      .where(and(eq(tests.id, id.data), eq(tests.userId, userId)));
+
+    if (!test) {
+      res.status(404).json({ error: "Test not found" });
+      return;
+    }
+
+    res.status(200).json(serialiseTest(test));
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 /**
  * GET /api/tests/:id/content
- * Read generated questions, answers, options, and instructions for an owned test. Content persistence will need to be implemented separately from metadata.
+ * Read separately stored questions, answers, options, and instructions for an owned test.
  * req.params.id.
- * Respond with 200 TestContent; serialize timestamps as ISO strings without an envelope.
+ * Respond with 200 TestContent without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
  * @param req - Authenticated Express request; use req.user.id for ownership.
@@ -402,13 +446,46 @@ export const getSingleTestById = async (
 export const getTestContent = async (
   req: Request,
   res: Response,
-): Promise<void> => {};
+): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = uuidSchema.safeParse(req.params.id);
+  if (!id.success) {
+    res.status(400).json({ error: "Invalid test ID" });
+    return;
+  }
+
+  try {
+    const [content] = await db
+      .select({
+        testId: testContents.testId,
+        instructions: testContents.instructions,
+        questions: testContents.questions,
+      })
+      .from(testContents)
+      .innerJoin(tests, eq(tests.id, testContents.testId))
+      .where(and(eq(tests.id, id.data), eq(tests.userId, userId)));
+
+    if (!content) {
+      res.status(404).json({ error: "Test content not found" });
+      return;
+    }
+
+    res.status(200).json(content);
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 
 /**
  * DELETE /api/tests/:id
  * Delete an owned test and its generated content.
  * req.params.id.
- * Respond with 204 without a body; serialize timestamps as ISO strings without an envelope.
+ * Respond with 204 without a body.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
  * @param req - Authenticated Express request; use req.user.id for ownership.
@@ -418,4 +495,32 @@ export const getTestContent = async (
 export const deleteSingleTest = async (
   req: Request,
   res: Response,
-): Promise<void> => {};
+): Promise<void> => {
+  const userId = req.user?.id;
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const id = uuidSchema.safeParse(req.params.id);
+  if (!id.success) {
+    res.status(400).json({ error: "Invalid test ID" });
+    return;
+  }
+
+  try {
+    const [deleted] = await db
+      .delete(tests)
+      .where(and(eq(tests.id, id.data), eq(tests.userId, userId)))
+      .returning({ id: tests.id });
+
+    if (!deleted) {
+      res.status(404).json({ error: "Test not found" });
+      return;
+    }
+
+    res.status(204).send();
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
