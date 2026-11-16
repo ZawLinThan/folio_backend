@@ -45,6 +45,7 @@ export const getPresignedUrl = async (req: Request, res: Response) => {
     const { fileName, contentType, size } = req.body as GetPresignedUrlReq;
 
     const MAX_SIZE = 20 * 1024 * 1024; // 20MB
+
     if (size > MAX_SIZE) {
       return res.status(400).json({ error: "File too large" });
     }
@@ -215,6 +216,7 @@ export const getAllDocuments = async (
   }
 
   const rawNotebookId = req.query?.notebookId;
+
   if (
     rawNotebookId !== undefined &&
     (typeof rawNotebookId !== "string" ||
@@ -233,11 +235,13 @@ export const getAllDocuments = async (
           and(eq(notebooks.id, rawNotebookId), eq(notebooks.userId, userId)),
         )
         .limit(1);
+
       if (!notebook) {
         res.status(404).json({ error: "Notebook not found" });
         return;
       }
     }
+
     const ownedDocuments = await db
       .select()
       .from(documents)
@@ -325,28 +329,37 @@ export const getDocumentFile = async (
 ): Promise<void> => {
   const userId = req.user?.id;
   const id = req.params.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+
   if (typeof id !== "string" || !z.uuid().safeParse(id).success) {
     res.status(400).json({ error: "Invalid document ID" });
     return;
   }
+
   try {
     const [document] = await db
       .select()
       .from(documents)
       .where(and(eq(documents.id, id), eq(documents.userId, userId)))
       .limit(1);
+
     if (!document) {
       res.status(404).json({ error: "Document not found" });
       return;
     }
+
     const object = await s3.send(
       new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: document.r2Key }),
     );
-    if (!object.Body) throw new Error("Document file has no body");
+
+    if (!object.Body) {
+      throw new Error("Document file has no body");
+    }
+
     const bytes = await object.Body.transformToByteArray();
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Cache-Control", "private, no-store");
@@ -490,6 +503,7 @@ export const editDocument = async (
   }
 
   const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+
   if (!name || name.length > 255) {
     res.status(400).json({ error: "Invalid document name" });
     return;

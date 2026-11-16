@@ -21,6 +21,7 @@ export const protectRoute = async (
   next: NextFunction,
 ) => {
   const match = req.get("Authorization")?.match(/^Bearer\s+(\S+)$/i);
+
   if (!match) {
     res.status(401).json({ error: "Missing or malformed Bearer token" });
     return;
@@ -28,6 +29,7 @@ export const protectRoute = async (
 
   try {
     const { data, error } = await supabase.auth.getUser(match[1]);
+
     if (error || !data.user) {
       res
         .status(401)

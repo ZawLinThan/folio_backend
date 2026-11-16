@@ -43,10 +43,13 @@ test("presigning accepts the exact size boundary and returns the public contract
 test("uploaded text is accepted asynchronously, isolated by owner and eventually ready", async () => {
   const courseId = process.env.TEST_COURSE_ID;
   const notebookId = process.env.TEST_NOTEBOOK_ID;
-  if (!courseId || !notebookId)
+
+  if (!courseId || !notebookId) {
     throw new Error(
       "Async upload requires TEST_COURSE_ID and TEST_NOTEBOOK_ID owned by TEST_USER_TOKEN.",
     );
+  }
+
   const fileName = `jest-${randomUUID()}.txt`;
   const content =
     "Photosynthesis converts light energy into chemical energy. Chlorophyll absorbs light in chloroplasts. Plants consume carbon dioxide and release oxygen.";
@@ -85,12 +88,18 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     body,
     otherToken,
   );
-  if (foreign.data?.documentId)
+
+  if (foreign.data?.documentId) {
     cleanup.track(`/api/documents/${foreign.data.documentId}`);
+  }
+
   error(foreign, 404);
   const accepted = await request("POST", "/api/documents/confirm", body);
-  if (accepted.data?.documentId)
+
+  if (accepted.data?.documentId) {
     cleanup.track(`/api/documents/${accepted.data.documentId}`);
+  }
+
   expect(accepted.status).toBe(202);
   expect(accepted.data).toEqual({
     documentId: expect.any(String),
@@ -124,12 +133,17 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     documentId: finished.id,
     count: 3,
   });
-  if (generated.data?.id) cleanup.track(`/api/flashcards/${generated.data.id}`);
+
+  if (generated.data?.id) {
+    cleanup.track(`/api/flashcards/${generated.data.id}`);
+  }
+
   expect(generated.status).toBe(201);
   record(generated.data, { documentId: finished.id, courseId });
   const cards = await request("GET", `/api/flashcards/${generated.data.id}`);
   expect(cards.status).toBe(200);
   expect(cards.data).toHaveLength(3);
+
   for (const card of cards.data) {
     expect(card).toMatchObject({
       setId: generated.data.id,
@@ -148,8 +162,11 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     referenceUrl: null,
   };
   const generatedTest = await request("POST", "/api/tests/generate", testInput);
-  if (generatedTest.data?.id)
+
+  if (generatedTest.data?.id) {
     cleanup.track(`/api/tests/${generatedTest.data.id}`);
+  }
+
   expect(generatedTest.status).toBe(201);
   record(generatedTest.data, { title: testInput.title, referenceFileId: null });
   const testPath = `/api/tests/${generatedTest.data.id}`;
@@ -174,6 +191,7 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     questions: expect.any(Array),
   });
   expect(questions.data.questions.length).toBeGreaterThan(0);
+
   for (const question of questions.data.questions) {
     expect(question).toMatchObject({
       id: expect.any(String),
@@ -183,8 +201,12 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     });
     expect(question.prompt.trim()).not.toBe("");
     expect(question.answer.trim()).not.toBe("");
-    for (const option of question.options) expect(typeof option).toBe("string");
+
+    for (const option of question.options) {
+      expect(typeof option).toBe("string");
+    }
   }
+
   expect(await request("DELETE", testPath)).toMatchObject({
     status: 204,
     text: "",

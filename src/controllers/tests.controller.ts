@@ -42,6 +42,7 @@ const modelQuestionSchema = z
     const normalisedOptions = options.map((option) =>
       option.trim().toLocaleLowerCase(),
     );
+
     if (new Set(normalisedOptions).size !== normalisedOptions.length) {
       context.addIssue({
         code: "custom",
@@ -49,6 +50,7 @@ const modelQuestionSchema = z
         message: "Multiple-choice options must be distinct.",
       });
     }
+
     if (
       options.length === 4 &&
       !normalisedOptions.includes(answer.trim().toLocaleLowerCase())
@@ -70,6 +72,7 @@ const generatedTestSchema = z
     const prompts = questions.map((question) =>
       question.prompt.trim().toLocaleLowerCase(),
     );
+
     if (new Set(prompts).size !== prompts.length) {
       context.addIssue({
         code: "custom",
@@ -81,6 +84,7 @@ const generatedTestSchema = z
     const multipleChoiceCount = questions.filter(
       (question) => question.options.length === 4,
     ).length;
+
     if (multipleChoiceCount !== 6) {
       context.addIssue({
         code: "custom",
@@ -120,12 +124,14 @@ const compactSource = (
     }
 
     const content = chunk.content.trim();
+
     if (!content) {
       continue;
     }
 
     const heading = `[${chunk.documentName}, part ${chunk.chunkIndex + 1}]\n`;
     const availableContentCharacters = remainingCharacters - heading.length;
+
     if (availableContentCharacters <= 0) {
       break;
     }
@@ -160,6 +166,7 @@ export const generateTest = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -207,6 +214,7 @@ export const generateTest = async (
       .from(notebooks)
       .where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)))
       .limit(1);
+
     if (!notebook) {
       res.status(404).json({ error: "Notebook not found" });
       return;
@@ -228,6 +236,7 @@ export const generateTest = async (
     const readyStudyDocuments = referenceFileId
       ? studyDocuments.filter((document) => document.id !== referenceFileId)
       : studyDocuments;
+
     if (!readyStudyDocuments.length) {
       res
         .status(409)
@@ -236,6 +245,7 @@ export const generateTest = async (
     }
 
     let referenceDocument: { id: string; name: string } | undefined;
+
     if (isReferenceMode && referenceFileId) {
       [referenceDocument] = await db
         .select({ id: documents.id, name: documents.name })
@@ -249,6 +259,7 @@ export const generateTest = async (
           ),
         )
         .limit(1);
+
       if (!referenceDocument) {
         res.status(404).json({ error: "Reference document not found" });
         return;
@@ -286,6 +297,7 @@ export const generateTest = async (
       namedChunks.filter((chunk) => studyDocumentIds.has(chunk.documentId)),
       MAX_STUDY_CONTEXT_CHARACTERS,
     );
+
     if (!studySource) {
       res
         .status(409)
@@ -301,6 +313,7 @@ export const generateTest = async (
           MAX_REFERENCE_CONTEXT_CHARACTERS,
         )
       : null;
+
     if (referenceDocument && !referenceSource) {
       res
         .status(409)
@@ -335,6 +348,7 @@ export const generateTest = async (
         .insert(tests)
         .values({ userId, title, referenceFileId })
         .returning();
+
       if (!test) {
         throw new Error("Test metadata was not created");
       }

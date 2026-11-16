@@ -126,7 +126,9 @@ export const searchSimilarChunks = async (options: {
       : scoreSchema.parse(options.minScore);
 
   // An empty document scope must never turn into an unrestricted search.
-  if (documentIds.length === 0) return [];
+  if (documentIds.length === 0) {
+    return [];
+  }
 
   const distance = cosineDistance(chunks.embedding, embedding);
   const score = sql<number>`1 - (${distance})`.mapWith(Number);
@@ -174,6 +176,7 @@ export const retrieveForSession = async (options: {
 }): Promise<RetrievedChunk[]> => {
   const question = questionSchema.parse(options.question);
   const topK = topKSchema.parse(options.topK ?? 6);
+
   if (options.minScore !== undefined) {
     scoreSchema.parse(options.minScore);
   }
@@ -184,7 +187,9 @@ export const retrieveForSession = async (options: {
     options.sessionId,
   );
 
-  if (documentIds.length === 0) return [];
+  if (documentIds.length === 0) {
+    return [];
+  }
 
   const embedding = await embedQuestion(question, options.embedQuery);
 

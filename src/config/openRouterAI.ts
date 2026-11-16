@@ -25,6 +25,7 @@ const openrouter = new OpenRouter({
  */
 const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
   let value: unknown;
+
   try {
     value = JSON.parse(content);
   } catch {
@@ -33,7 +34,9 @@ const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
       "invalid_json",
     );
   }
+
   const result = schema.safeParse(value);
+
   if (!result.success) {
     const issues = result.error.issues.slice(0, 8).map((issue) => ({
       path: issue.path.map(String).join(".").slice(0, 160) || "$",
@@ -45,6 +48,7 @@ const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
       issues,
     );
   }
+
   return result.data;
 };
 
@@ -68,6 +72,7 @@ const providerValidationError = <T>(
   };
   const generated =
     failure.error?.failed_generation ?? failure.failed_generation;
+
   if (typeof generated === "string") {
     try {
       parseModelOutput(generated, schema);
@@ -78,6 +83,7 @@ const providerValidationError = <T>(
       }
     }
   }
+
   /**
    * Some providers supply only a textual missing-property diagnostic. Match only
    * known top-level schema fields rather than copying an arbitrary provider message.
@@ -173,20 +179,28 @@ export const chatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
       const code =
         (error as { code?: string; error?: { code?: string } })?.code ??
         (error as { error?: { code?: string } })?.error?.code;
+
       if (
         !(error instanceof ModelOutputError) &&
         code !== "json_validate_failed"
-      )
+      ) {
         throw error;
+      }
+
       const validation =
         error instanceof ModelOutputError
           ? error
           : providerValidationError(error, props.schema);
       validation.correctionAttempted = attempt === 1;
-      if (attempt === 1) throw validation;
+
+      if (attempt === 1) {
+        throw validation;
+      }
+
       correction = validation;
     }
   }
+
   throw new ModelOutputError("The model could not produce valid data.");
 };
 
@@ -206,6 +220,7 @@ export const embedText = async (text: string): Promise<number[]> => {
         encodingFormat: "float",
       },
     });
+
     //console.log(embedding.data[0].embedding.length);
 
     // Reject unexpected SDK response variants before reading the vector.
@@ -215,6 +230,7 @@ export const embedText = async (text: string): Promise<number[]> => {
     ) {
       throw new ModelOutputError("The embedding response contained no vector.");
     }
+
     return embedding.data[0].embedding;
   } catch (error) {
     throw tagProviderError(error, "openrouter embedding");

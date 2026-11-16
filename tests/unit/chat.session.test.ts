@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { beforeEach, expect, it, jest } from "@jest/globals";
 
 jest.mock("../../src/db/index.js", () => ({
-  db: { select: jest.fn(), transaction: jest.fn() },
+  db: { select: jest.fn(), transaction: jest.fn(), update: jest.fn() },
 }));
 jest.mock("../../src/config/sentry.js", () => ({
   Sentry: { captureException: jest.fn() },
@@ -19,6 +19,7 @@ jest.mock("../../src/services/retrieval.service.js", () => ({
 import {
   createNewChatSession,
   getSingleChatSession,
+  updateChatSessionTitle,
 } from "../../src/controllers/chat.controller.js";
 import { db } from "../../src/db/index.js";
 
@@ -38,6 +39,43 @@ function rows(result: unknown[]) {
   } as never);
 }
 beforeEach(() => jest.clearAllMocks());
+
+it.each(["   ", "x".repeat(256)])(
+  "rejects invalid chat titles",
+  async (title) => {
+    const response = res();
+    await updateChatSessionTitle(
+      { ...req, params: { id }, body: { title } } as Request,
+      response,
+    );
+    expect(response.status).toHaveBeenCalledWith(400);
+    expect(db.update).not.toHaveBeenCalled();
+  },
+);
+
+it.each([
+  { updated: [{ id, title: "Study notes" }], status: 200 },
+  { updated: [], status: 404 },
+])(
+  "returns $status when renaming a chat session",
+  async ({ updated, status }) => {
+    const set = jest.fn(() => ({
+      where: () => ({ returning: async () => updated }),
+    }));
+    jest.mocked(db.update).mockReturnValueOnce({ set } as never);
+    const response = res();
+    await updateChatSessionTitle(
+      { ...req, params: { id }, body: { title: "  Study notes  " } } as Request,
+      response,
+    );
+    expect(set).toHaveBeenCalledWith({ title: "Study notes" });
+    expect(response.status).toHaveBeenCalledWith(status);
+
+    if (status === 200) {
+      expect(response.json).toHaveBeenCalledWith(updated[0]);
+    }
+  },
+);
 
 it.each(["pending", "queued", "processing", "failed"])(
   "rejects a %s document",
