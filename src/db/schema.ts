@@ -14,8 +14,12 @@ import {
   unique,
 } from "drizzle-orm/pg-core";
 
+import { authUsers } from "./authUsers.js";
+
 export const profiles = pgTable("profiles", {
-  id: uuid("user_id").primaryKey(),
+  id: uuid("user_id")
+    .primaryKey()
+    .references(() => authUsers.id, { onDelete: "cascade" }),
   name: varchar("name", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

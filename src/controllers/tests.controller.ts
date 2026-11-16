@@ -325,6 +325,8 @@ export const generateTest = async (
       return;
     }
 
+    console.log("Generating test with study source length:", studySource.length);
+    
     const generated = generatedTestSchema.parse(
       await ChatStructured({
         instruction:

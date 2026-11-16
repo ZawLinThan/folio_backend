@@ -12,6 +12,8 @@ import chatRouter from "./routes/chat.route.js";
 import flashcardsRouter from "./routes/flashcards.route.js";
 import coursesRouter from "./routes/courses.route.js";
 import testsRouter from "./routes/tests.route.js";
+import profileRouter from "./routes/profile.route.js";
+import { protectRoute } from "./middleware/protectRoute.js";
 
 const app = express();
 const port = 3000;
@@ -30,12 +32,13 @@ app.get("/", (_req, res) => {
   res.json({ message: "Server is running" });
 });
 
-app.use("/api/notebooks", notebooksRouter);
-app.use("/api/documents", documentsRouter);
-app.use("/api/chat", chatRouter);
-app.use("/api/flashcards", flashcardsRouter);
-app.use("/api/tests", testsRouter);
-app.use("/api/courses", coursesRouter);
+app.use("/api/notebooks", protectRoute, notebooksRouter);
+app.use("/api/documents",protectRoute, documentsRouter);
+app.use("/api/chat", protectRoute, chatRouter);
+app.use("/api/flashcards", protectRoute, flashcardsRouter);
+app.use("/api/tests", protectRoute, testsRouter);
+app.use("/api/courses", protectRoute, coursesRouter);
+app.use("/api/profile", protectRoute, profileRouter);
 
 Sentry.setupExpressErrorHandler(app);
 

@@ -64,6 +64,13 @@
       "when": 1793992312849,
       "tag": "0008_fancy_moonstone",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794871157496,
+      "tag": "0009_amused_alex_power",
+      "breakpoints": true
     }
   ]
 }
