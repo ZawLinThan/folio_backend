@@ -69,9 +69,11 @@ export const downloadFromR2 = async (r2Key: string): Promise<Buffer> => {
   const object = await s3.send(
     new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: r2Key }),
   );
+
   if (!object.Body) {
     throw new Error("R2 document response has no body");
   }
+
   return Buffer.from(await object.Body.transformToByteArray());
 };
 
@@ -257,6 +259,7 @@ const getMineruTimeoutMs = (): number => {
   }
 
   const timeoutMs = Number(configuredTimeout);
+
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
     throw new Error("MINERU_TIMEOUT_MS must be a positive integer.");
   }
@@ -293,10 +296,12 @@ const runMineru = async (
 
       settled = true;
       clearTimeout(timeout);
+
       if (error) {
         reject(error);
         return;
       }
+
       resolve();
     };
 
@@ -391,6 +396,7 @@ const extractDocx = async (file: Buffer): Promise<string> => {
   }
 
   const xml = await documentXml.async("string");
+
   if (xml.length > MAX_DOCX_XML_CHARACTERS) {
     throw new Error(
       `DOCX XML exceeds the ${MAX_DOCX_XML_CHARACTERS.toLocaleString()} character limit.`,
@@ -424,7 +430,10 @@ const CHUNK_OVERLAP = 200;
 export const chunkText = (text: string): TextChunk[] => {
   const result: TextChunk[] = [];
   const normalized = normaliseText(text).trim();
-  if (!normalized) return result;
+
+  if (!normalized) {
+    return result;
+  }
 
   // Selectable PDFs contain these page markers. Other extractors do not
   // provide reliable page numbers, so their chunks retain null metadata.
@@ -454,6 +463,7 @@ export const chunkText = (text: string): TextChunk[] => {
   for (const page of pages) {
     // Keep Markdown headings with their following content when possible.
     const sections = page.text.split(/(?=^#{1,6}[ \t]+\S)/m);
+
     for (const section of sections) {
       const content = section.trim();
 
@@ -469,13 +479,16 @@ export const chunkText = (text: string): TextChunk[] => {
       }));
 
       let start = 0;
+
       while (start < content.length) {
         let end = Math.min(start + CHUNK_CHARACTERS, content.length);
         const enclosing = equations.find(
           (equation) => equation.start < end && end < equation.end,
         );
-        if (enclosing)
+
+        if (enclosing) {
           end = enclosing.start > start ? enclosing.start : enclosing.end;
+        }
 
         if (end < content.length && end - start >= CHUNK_CHARACTERS / 2) {
           const window = content.slice(start, end);
@@ -515,6 +528,7 @@ export const chunkText = (text: string): TextChunk[] => {
         }
 
         const chunk = content.slice(start, end).trim();
+
         if (chunk) {
           result.push({
             content: chunk,
@@ -533,21 +547,27 @@ export const chunkText = (text: string): TextChunk[] => {
           (equation) => equation.start < next && next < equation.end,
         );
 
-        if (overlapEquation)
+        if (overlapEquation) {
           next =
             overlapEquation.start > start
               ? overlapEquation.start
               : overlapEquation.end;
+        }
 
         // Begin overlap at a word boundary where possible.
         if (!overlapEquation) {
           const space = content.slice(next, end).search(/\s/);
-          if (space >= 0) next += space + 1;
+
+          if (space >= 0) {
+            next += space + 1;
+          }
         }
+
         start = Math.max(start + 1, next);
       }
     }
   }
+
   return result;
 };
 
@@ -576,6 +596,7 @@ const embedChunks = async (
         `Embedding must be a finite, nonzero ${EMBEDDING_DIMENSIONS}-dimension vector.`,
       );
     }
+
     embedded.push({ ...chunk, embedding });
   }
 

@@ -6,6 +6,7 @@ import {
   deleteChatSession,
   getAllChatSessions,
   getSingleChatSession,
+  updateChatSessionTitle,
 } from "../controllers/chat.controller.js";
 
 const router = Router();
@@ -17,6 +18,7 @@ router.get("/health", (_req, res) => {
 router.post("/sessions", protectRoute, createNewChatSession);
 router.get("/sessions", protectRoute, getAllChatSessions);
 router.get("/sessions/:id", protectRoute, getSingleChatSession);
+router.patch("/sessions/:id", protectRoute, updateChatSessionTitle);
 router.delete("/sessions/:id", protectRoute, deleteChatSession);
 router.post("/sessions/:id/messages", protectRoute, answerQuestion);
 

@@ -35,6 +35,7 @@ describe("retrieval service", () => {
     const embed = jest.fn().mockResolvedValue(vector);
     await expect(embedQuestion("  question  ", embed)).resolves.toEqual(vector);
     expect(embed).toHaveBeenCalledWith("question");
+
     for (const invalid of [
       [],
       [1],
@@ -122,6 +123,7 @@ describe("retrieval service", () => {
 
   it("rejects invalid questions and limits before any database or provider work", async () => {
     const embedQuery = jest.fn();
+
     for (const options of [
       { question: " " },
       { topK: 0 },
@@ -138,6 +140,7 @@ describe("retrieval service", () => {
         }),
       ).rejects.toThrow();
     }
+
     expect(db.select).not.toHaveBeenCalled();
     expect(embedQuery).not.toHaveBeenCalled();
   });

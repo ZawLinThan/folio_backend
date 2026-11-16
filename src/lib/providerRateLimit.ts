@@ -39,16 +39,22 @@ export const retryDelay = (error: any, now = Date.now()): number => {
     const milliseconds = Number.isFinite(seconds)
       ? seconds * 1000
       : Date.parse(retry) - now;
-    if (Number.isFinite(milliseconds) && milliseconds >= 0)
+
+    if (Number.isFinite(milliseconds) && milliseconds >= 0) {
       return Math.ceil(milliseconds) + 1000;
+    }
   }
+
   const reset = header(headers, "x-ratelimit-reset-tokens");
 
   if (reset && /^(?:\d+(?:\.\d+)?(?:ms|s|m|h))+$/.test(reset)) {
     let milliseconds = 0;
-    for (const match of reset.matchAll(/(\d+(?:\.\d+)?)(ms|s|m|h)/g))
+
+    for (const match of reset.matchAll(/(\d+(?:\.\d+)?)(ms|s|m|h)/g)) {
       milliseconds +=
         Number(match[1]) * { ms: 1, s: 1000, m: 60000, h: 3600000 }[match[2]]!;
+    }
+
     return Math.ceil(milliseconds) + 1000;
   }
 
@@ -66,8 +72,12 @@ export const tagProviderError = (error: any, provider: Provider) => {
   if (error && typeof error === "object") {
     error.provider = provider;
     error.status = providerStatus(error);
-    if (error.status === 429) error.retryAfterMs = retryDelay(error);
+
+    if (error.status === 429) {
+      error.retryAfterMs = retryDelay(error);
+    }
   }
+
   return error;
 };
 
@@ -134,8 +144,9 @@ export class ProviderScheduler {
     for (let attempt = 0; ; attempt++) {
       let wait: number;
 
-      while ((wait = await this.gate.acquire(tokens)) > 0)
+      while ((wait = await this.gate.acquire(tokens)) > 0) {
         await this.wait(wait);
+      }
 
       try {
         return await request();
@@ -146,10 +157,18 @@ export class ProviderScheduler {
           },
         });
         tagProviderError(error, provider);
-        if (providerStatus(error) !== 429) throw error;
+
+        if (providerStatus(error) !== 429) {
+          throw error;
+        }
+
         const milliseconds = retryDelay(error);
         await this.gate.cooldown(milliseconds);
-        if (attempt >= 2) throw error;
+
+        if (attempt >= 2) {
+          throw error;
+        }
+
         console.info(
           JSON.stringify({
             event: "provider_rate_limited",
@@ -174,8 +193,11 @@ export const configureProviderScheduler = (
   provider: Provider,
   scheduler?: ProviderScheduler,
 ) => {
-  if (scheduler) schedulers.set(provider, scheduler);
-  else schedulers.delete(provider);
+  if (scheduler) {
+    schedulers.set(provider, scheduler);
+  } else {
+    schedulers.delete(provider);
+  }
 };
 
 /**
