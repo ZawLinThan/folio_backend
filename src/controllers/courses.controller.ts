@@ -33,6 +33,7 @@ export const getAllCourses = async (
   res: Response,
 ): Promise<void> => {
   const userID = req.user?.id;
+
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
     return;
@@ -66,6 +67,7 @@ export const createCourse = async (
   res: Response,
 ): Promise<void> => {
   const userID = req.user?.id;
+
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
     return;
@@ -141,12 +143,14 @@ export const getCourseById = async (
   res: Response,
 ): Promise<void> => {
   const userID = req.user?.id;
+
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
     return;
   }
 
   const courseID = req.params.id;
+
   if (typeof courseID !== "string" || !z.uuid().safeParse(courseID).success) {
     res.status(400).json({ error: "Invalid course ID" });
     return;
@@ -185,12 +189,14 @@ export const deleteCourse = async (
   res: Response,
 ): Promise<void> => {
   const userID = req.user?.id;
+
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
     return;
   }
 
   const courseID = req.params.id;
+
   if (typeof courseID !== "string" || !z.uuid().safeParse(courseID).success) {
     res.status(400).json({ error: "Invalid course ID" });
     return;
@@ -260,6 +266,7 @@ export const renameCourse = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;

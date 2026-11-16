@@ -125,12 +125,14 @@ const compactSource = (
     }
 
     const content = chunk.content.trim();
+
     if (!content) {
       continue;
     }
 
     const heading = `[${chunk.documentName}, part ${chunk.chunkIndex + 1}]\n`;
     const availableContentCharacters = remainingCharacters - heading.length;
+
     if (availableContentCharacters <= 0) {
       break;
     }
@@ -165,6 +167,7 @@ export const generateTest = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -235,6 +238,7 @@ export const generateTest = async (
     const readyStudyDocuments = referenceFileId
       ? studyDocuments.filter((document) => document.id !== referenceFileId)
       : studyDocuments;
+
     if (!readyStudyDocuments.length) {
       res
         .status(409)
@@ -297,6 +301,7 @@ export const generateTest = async (
       namedChunks.filter((chunk) => studyDocumentIds.has(chunk.documentId)),
       MAX_STUDY_CONTEXT_CHARACTERS,
     );
+
     if (!studySource) {
       res
         .status(409)
@@ -312,6 +317,7 @@ export const generateTest = async (
           MAX_REFERENCE_CONTEXT_CHARACTERS,
         )
       : null;
+
     if (referenceDocument && !referenceSource) {
       res
         .status(409)
@@ -347,6 +353,7 @@ export const generateTest = async (
         .insert(tests)
         .values({ userId, title, referenceFileId })
         .returning();
+
       if (!test) {
         throw new Error("Test metadata was not created");
       }

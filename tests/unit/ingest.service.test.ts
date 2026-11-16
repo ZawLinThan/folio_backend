@@ -123,6 +123,7 @@ const createPdf = (text: string): Buffer => {
 
   const xrefOffset = Buffer.byteLength(pdf, "ascii");
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+
   for (const offset of offsets.slice(1)) {
     pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
   }
@@ -265,8 +266,10 @@ it("splits long prose with overlap and keeps Markdown section boundaries", () =>
   ).toBe(true);
   const overlap = chunks[1].content.split(" ").slice(0, 4).join(" ");
   expect(chunks[0].content).toContain(overlap);
-  for (const sentence of sentences)
+
+  for (const sentence of sentences) {
     expect(chunks.some((chunk) => chunk.content.includes(sentence))).toBe(true);
+  }
 });
 
 it("keeps DOCX and display equations intact across chunk boundaries", () => {
@@ -277,6 +280,7 @@ it("keeps DOCX and display equations intact across chunk boundaries", () => {
   const chunks = chunkText(
     `Explanation. ${equations[0]}\n\nMore context. ${equations[1]}\n\nFinal explanation.`,
   );
+
   for (const equation of equations) {
     expect(chunks.some((chunk) => chunk.content.includes(equation))).toBe(true);
   }

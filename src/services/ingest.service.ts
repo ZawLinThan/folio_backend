@@ -69,6 +69,7 @@ export const downloadFromR2 = async (r2Key: string): Promise<Buffer> => {
   const object = await s3.send(
     new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: r2Key }),
   );
+
   if (!object.Body) {
     throw new Error("R2 document response has no body");
   }
@@ -258,6 +259,7 @@ const getMineruTimeoutMs = (): number => {
   }
 
   const timeoutMs = Number(configuredTimeout);
+
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs <= 0) {
     throw new Error("MINERU_TIMEOUT_MS must be a positive integer.");
   }
@@ -477,6 +479,7 @@ export const chunkText = (text: string): TextChunk[] => {
   for (const page of pages) {
     // Keep Markdown headings with their following content when possible.
     const sections = page.text.split(/(?=^#{1,6}[ \t]+\S)/m);
+
     for (const section of sections) {
       const content = section.trim();
 

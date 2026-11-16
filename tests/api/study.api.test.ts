@@ -69,9 +69,11 @@ test("notebooks reject creation against another user's course", async () => {
 test("manual flashcards support CRUD and enforce ownership", async () => {
   const input = { title: `Cards ${randomUUID()}`, courseId: null };
   const created = await request("POST", "/api/flashcards", input);
+
   if (created.data?.id) {
     cleanup.track(`/api/flashcards/${created.data.id}`);
   }
+
   expect(created.status).toBe(201);
   record(created.data, { ...input, documentId: null });
   const path = `/api/flashcards/${created.data.id}`;
@@ -90,8 +92,11 @@ test("manual flashcards support CRUD and enforce ownership", async () => {
     }),
   );
   const cardPath = `${path}/cards/${card.data.id}`;
-  for (const method of ["GET", "DELETE"])
+
+  for (const method of ["GET", "DELETE"]) {
     error(await request(method, path, undefined, otherToken), 404);
+  }
+
   error(
     await request(
       "PATCH",

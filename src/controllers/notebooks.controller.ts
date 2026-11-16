@@ -23,6 +23,7 @@ export const getAllNotebooks = async (
 ): Promise<void> => {
   try {
     const userId = req.user?.id;
+
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -86,6 +87,7 @@ export const createNotebook = async (
 ): Promise<void> => {
   try {
     const userId = req.user?.id;
+
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
       return;
@@ -127,6 +129,7 @@ export const createNotebook = async (
         ),
       )
       .limit(1);
+
     if (duplicate) {
       res
         .status(409)
@@ -153,6 +156,7 @@ export const editNotebook = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -162,6 +166,7 @@ export const editNotebook = async (
   const body = z
     .object({ noteBookName: z.string().trim().min(1).max(255) })
     .safeParse(req.body);
+
   if (!id.success || !body.success) {
     res.status(400).json({ error: "Invalid notebook ID or name" });
     return;
@@ -173,6 +178,7 @@ export const editNotebook = async (
       .from(notebooks)
       .where(and(eq(notebooks.id, id.data), eq(notebooks.userId, userId)))
       .limit(1);
+
     if (!notebook) {
       res.status(404).json({ error: "Notebook not found" });
       return;
@@ -224,6 +230,7 @@ export const deleteNotebook = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;

@@ -218,6 +218,7 @@ export const getAllDocuments = async (
   }
 
   const rawNotebookId = req.query?.notebookId;
+
   if (
     rawNotebookId !== undefined &&
     (typeof rawNotebookId !== "string" ||
@@ -505,6 +506,7 @@ export const editDocument = async (
   }
 
   const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+
   if (!name || name.length > 255) {
     res.status(400).json({ error: "Invalid document name" });
     return;

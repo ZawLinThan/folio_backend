@@ -59,6 +59,7 @@ export function record(
     }),
   );
   expect(value.id).toMatch(/^[0-9a-f-]{36}$/i);
+
   for (const key of ["createdAt", "updatedAt"] as const) {
     expect(typeof value[key]).toBe("string");
     expect(new Date(value[key]).toISOString()).toBe(value[key]);
@@ -105,9 +106,11 @@ export async function createCourse(cleanup: ReturnType<typeof resources>) {
     semester: "Test",
   };
   const result = await request("POST", "/api/courses", input);
+
   if (result.data?.id) {
     cleanup.track(`/api/courses/${result.data.id}`);
   }
+
   expect(result.status).toBe(201);
   record(result.data, input);
   return result.data;
@@ -116,6 +119,7 @@ export async function createCourse(cleanup: ReturnType<typeof resources>) {
 export async function pollDocument(id: string, timeoutMs = 60000) {
   const deadline = Date.now() + timeoutMs;
   let last;
+
   do {
     const result = await request("GET", `/api/documents/${id}`);
     expect(result.status).toBe(200);
@@ -124,11 +128,14 @@ export async function pollDocument(id: string, timeoutMs = 60000) {
     expect(["pending", "queued", "processing", "ready", "failed"]).toContain(
       last.status,
     );
+
     if (["ready", "failed"].includes(last.status)) {
       return last;
     }
+
     await new Promise((resolve) => setTimeout(resolve, 250));
   } while (Date.now() < deadline);
+
   throw new Error(
     `Document ${id} did not finish within ${timeoutMs}ms (last status: ${last?.status})`,
   );

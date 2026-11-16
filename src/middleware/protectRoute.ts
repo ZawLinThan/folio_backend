@@ -22,6 +22,7 @@ export const protectRoute = async (
   next: NextFunction,
 ) => {
   const match = req.get("Authorization")?.match(/^Bearer\s+(\S+)$/i);
+
   if (!match) {
     res.status(401).json({ error: "Missing or malformed Bearer token" });
     return;

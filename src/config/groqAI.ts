@@ -76,6 +76,7 @@ const providerValidationError = <T>(
   };
   const generated =
     failure.error?.failed_generation ?? failure.failed_generation;
+
   if (typeof generated === "string") {
     try {
       parseModelOutput(generated, schema);
@@ -185,19 +186,24 @@ export const ChatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
       const code =
         (error as { code?: string; error?: { code?: string } })?.code ??
         (error as { error?: { code?: string } })?.error?.code;
+
       if (
         !(error instanceof ModelOutputError) &&
         code !== "json_validate_failed"
-      )
+      ) {
         throw error;
+      }
+
       const validation =
         error instanceof ModelOutputError
           ? error
           : providerValidationError(error, props.schema);
       validation.correctionAttempted = attempt === 1;
+
       if (attempt === 1) {
         throw validation;
       }
+
       correction = validation;
     }
   }

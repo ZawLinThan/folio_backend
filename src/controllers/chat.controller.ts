@@ -18,6 +18,7 @@ import {
 } from "../services/retrieval.service.js";
 import { embedText } from "../config/openRouterAI.js";
 import { generateAnswer } from "../services/answer.service.js";
+import e from "express";
 
 /**
  * @description Create a new chat session with 1+ documents. This will create a new chat session in the database and return the session ID.
@@ -29,6 +30,7 @@ import { generateAnswer } from "../services/answer.service.js";
  */
 export const createNewChatSession = async (req: Request, res: Response) => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -113,6 +115,7 @@ const createChatSessionSchema = z.object({
  */
 export const getAllChatSessions = async (req: Request, res: Response) => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -164,6 +167,7 @@ export const getAllChatSessions = async (req: Request, res: Response) => {
  */
 export const getSingleChatSession = async (req: Request, res: Response) => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({
       error: "Unauthorized user",
@@ -345,8 +349,46 @@ export const answerQuestion = async (req: Request, res: Response) => {
       return;
     }
 
+    console.log("ERROR: ", error);
     Sentry.captureException(error, { tags: { area: "chat-answer" } });
     res.status(500).json({ error: "Failed to answer question" });
+  }
+};
+
+export const updateChatSessionTitle = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    res.status(401).json({ error: "Unauthorized user" });
+    return;
+  }
+
+  const id = z.uuid().safeParse(req.params.id);
+  const body = z
+    .object({ title: z.string().trim().min(1).max(255) })
+    .safeParse(req.body);
+
+  if (!id.success || !body.success) {
+    res.status(400).json({ error: "Invalid session ID or title" });
+    return;
+  }
+
+  try {
+    const [updated] = await db
+      .update(chatSessions)
+      .set({ title: body.data.title })
+      .where(and(eq(chatSessions.id, id.data), eq(chatSessions.userId, userId)))
+      .returning({ id: chatSessions.id, title: chatSessions.title });
+
+    if (!updated) {
+      res.status(404).json({ error: "Chat session not found" });
+      return;
+    }
+
+    res.status(200).json(updated);
+  } catch (error) {
+    Sentry.captureException(error, { tags: { area: "chat-session-rename" } });
+    res.status(500).json({ error: "Failed to rename chat session" });
   }
 };
 
@@ -360,6 +402,7 @@ export const answerQuestion = async (req: Request, res: Response) => {
  */
 export const deleteChatSession = async (req: Request, res: Response) => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized user" });
     return;
