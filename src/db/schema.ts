@@ -13,6 +13,7 @@ import {
   vector,
   unique,
 } from "drizzle-orm/pg-core";
+
 export const profiles = pgTable("profiles", {
   id: uuid("user_id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -50,6 +51,7 @@ export const notebooks = pgTable("notebooks", {
 
 export type DocumentStatus =
   "pending" | "queued" | "processing" | "ready" | "failed";
+
 export const documents = pgTable(
   "documents",
   {
@@ -94,7 +96,7 @@ export const chunks = pgTable(
     chunkIndex: integer("chunk_index").notNull(),
     pageNumber: integer("page_number"),
     tokenCount: integer("token_count"),
-    embedding: vector("embedding", { dimensions: 2048 } as any),
+    embedding: vector("embedding", { dimensions: 2048 }),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     // fk: userId -> auth.users(id), handled by supabase
   },

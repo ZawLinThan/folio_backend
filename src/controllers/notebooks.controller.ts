@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { and, eq, ne, sql } from "drizzle-orm";
+import z from "zod";
+
 import { db } from "../db/index.js";
 import { courses, notebooks, documents } from "../db/schema.js";
 import { Sentry } from "../config/sentry.js";
-import z from "zod";
 
 /**
  * GET /api/notebooks?courseId=...

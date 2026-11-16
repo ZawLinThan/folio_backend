@@ -1,17 +1,20 @@
-import { env } from "../config/env.js";
 import type { Request, Response } from "express";
-import type {
-  ConfirmFileUploadReq,
-  GetPresignedUrlReq,
-} from "../types/index.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3 } from "../config/r2.js";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
+import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
+
+import { env } from "../config/env.js";
+import type {
+  ConfirmFileUploadReq,
+  GetPresignedUrlReq,
+} from "../types/index.js";
+import { s3 } from "../config/r2.js";
 import { db } from "../db/index.js";
 import {
   chatSessionDocuments,
@@ -20,11 +23,9 @@ import {
   notebooks,
   tests,
 } from "../db/schema.js";
-import { and, desc, eq } from "drizzle-orm";
 import { documentQueue } from "../queue/document.queue.js";
 import { updateDocumentStatus } from "../services/ingest.service.js";
 import { Sentry } from "../config/sentry.js";
-import { z } from "zod";
 /**
  * @description Controller function to generate a presigned URL for uploading a file to S3.
  * File size limit is 20MB. Presigned URL expires in 3600 seconds.
@@ -50,10 +51,10 @@ export const getPresignedUrl = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "File too large" });
     }
 
-    // check the allowed type
     const key = `${id}/${Date.now()}-${fileName.replace(/\s/g, "-")}`;
 
     console.log("about to send req to r2");
+
     const uploadUrl = await getSignedUrl(
       s3,
       new PutObjectCommand({
@@ -64,6 +65,7 @@ export const getPresignedUrl = async (req: Request, res: Response) => {
       { expiresIn: 3600 },
     );
     console.log("Got Presigned");
+
     res.status(200).json({
       uploadUrl,
       key,
@@ -361,6 +363,7 @@ export const getDocumentFile = async (
     }
 
     const bytes = await object.Body.transformToByteArray();
+
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");

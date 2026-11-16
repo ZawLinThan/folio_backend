@@ -1,18 +1,26 @@
-import { env } from "./env.js";
 import { OpenRouter } from "@openrouter/sdk";
-import { ChatRequest } from "../types/index.js";
+import { SendChatCompletionRequestResponse } from "@openrouter/sdk/models/operations";
 import z from "zod";
+
+import { env } from "./env.js";
+import { ChatRequest } from "../types/index.js";
 import { ModelOutputError } from "../lib/errors.js";
 import {
   scheduleProviderRequest,
   tagProviderError,
 } from "../lib/providerRateLimit.js";
 import { beforeProviderCall } from "../lib/providerCalls.js";
-import { SendChatCompletionRequestResponse } from "@openrouter/sdk/models/operations";
+
 
 const openrouter = new OpenRouter({
   apiKey: env.OPENROUTER_API_KEY,
 });
+
+/** A single completion choice returned by the OpenRouter chat API. */
+type ChatChoice = {
+  finishReason?: string;
+  message?: { content?: string };
+};
 
 /**
  * Parses model JSON and validates it against the requested schema.
@@ -92,9 +100,11 @@ const providerValidationError = <T>(
     (z.toJSONSchema(schema) as { required?: string[] }).required ?? [];
   const missing =
     failure.message?.match(/missing properties:\s*([^\n]+)/)?.[1] ?? "";
+
   const issues = required
     .filter((key) => missing.includes(`'${key}'`))
     .map((path) => ({ path, code: "missing_property" }));
+
   return new ModelOutputError(
     "The provider rejected the model's output schema.",
     "provider_schema_validation",
@@ -161,7 +171,7 @@ export const chatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
           },
         );
 
-      const choices = (response as any)?.choices;
+      const choices = (response as { choices?: ChatChoice[] }).choices;
 
       if (choices?.[0]?.finishReason === "length") {
         throw new ModelOutputError(
@@ -171,7 +181,7 @@ export const chatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
       }
 
       return parseModelOutput(
-        choices?.[0]?.message.content || "",
+        choices?.[0]?.message?.content || "",
         props.schema,
       );
     } catch (error) {

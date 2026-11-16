@@ -283,6 +283,7 @@ const runMineru = async (
     let stdout = "";
     let stderr = "";
     let settled = false;
+
     const child = spawn(command, args, {
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
@@ -374,6 +375,7 @@ const extractPdf = async (file: Buffer): Promise<string> => {
     }
 
     const { text } = await extractPdfText(pdf, { mergePages: false });
+
     const pages = text
       .map((page, index) => {
         const pageText = normaliseText(page).trim();
@@ -409,6 +411,14 @@ const extractDocx = async (file: Buffer): Promise<string> => {
   );
 };
 
+/**
+ * Extract plain text from an uploaded document.
+ *
+ * @param file - The raw document bytes.
+ * @param fileType - The stored document type.
+ * @param options - Extraction options, such as math-aware PDF parsing.
+ * @returns The extracted text, or an empty string for an unsupported type.
+ */
 export const extractText = async (
   file: Buffer,
   fileType: Document["fileType"],
@@ -427,6 +437,12 @@ export const extractText = async (
 const CHUNK_CHARACTERS = 2000;
 const CHUNK_OVERLAP = 200;
 
+/**
+ * Split extracted text into overlapping, page-aware chunks.
+ *
+ * @param text - The extracted document text.
+ * @returns Chunks with their content, index, page number, and token estimate.
+ */
 export const chunkText = (text: string): TextChunk[] => {
   const result: TextChunk[] = [];
   const normalized = normaliseText(text).trim();
@@ -482,6 +498,7 @@ export const chunkText = (text: string): TextChunk[] => {
 
       while (start < content.length) {
         let end = Math.min(start + CHUNK_CHARACTERS, content.length);
+
         const enclosing = equations.find(
           (equation) => equation.start < end && end < equation.end,
         );
@@ -543,6 +560,7 @@ export const chunkText = (text: string): TextChunk[] => {
         }
 
         let next = end - start <= CHUNK_OVERLAP ? end : end - CHUNK_OVERLAP;
+
         const overlapEquation = equations.find(
           (equation) => equation.start < next && next < equation.end,
         );
@@ -669,7 +687,7 @@ export const updateDocumentStatus = async (
         area: "document-status-update",
       },
     });
-    throw new Error("Failed to update the document status");
+    throw new Error("Failed to update the document status", { cause: error });
   }
 };
 
@@ -678,6 +696,12 @@ type Props = {
   job: Job<DocumentJob, void>;
 };
 
+/**
+ * Run the ingestion pipeline for a queued document.
+ *
+ * @param props - The document identifier and the queue job tracking progress.
+ * @returns Resolves once the document is ready and its chunks are stored.
+ */
 export const processDocument = async ({
   documentId,
   job,
@@ -691,6 +715,7 @@ export const processDocument = async ({
       .from(documents)
       .where(eq(documents.id, documentId))
       .limit(1);
+
     const document = documentResult[0];
 
     await job.updateProgress(10);
@@ -725,6 +750,7 @@ export const processDocument = async ({
 
     // chunking
     const chunks: TextChunk[] = chunkText(text);
+
     console.log("Chunked text");
     await job.updateProgress(55);
 

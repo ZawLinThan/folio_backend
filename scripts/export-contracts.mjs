@@ -9,10 +9,12 @@ const output = process.argv[2]
   : fileURLToPath(new URL("../artifacts/study-api.d.ts", import.meta.url));
 
 const content = await readFile(source, "utf8");
-if (/^\s*import\s/m.test(content))
+
+if (/^\s*import\s/m.test(content)) {
   throw new Error(
     "API contracts must be self-contained; remove implementation imports before exporting.",
   );
+}
 
 await mkdir(dirname(output), { recursive: true });
 

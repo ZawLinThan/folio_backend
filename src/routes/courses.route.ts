@@ -1,5 +1,6 @@
-import { protectRoute } from "../middleware/protectRoute.js";
 import { Router } from "express";
+
+import { protectRoute } from "../middleware/protectRoute.js";
 import {
   getAllCourses,
   createCourse,

@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
-import { db } from "../db/index.js";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
+
+import { db } from "../db/index.js";
 import {
   courses,
   documents,
@@ -8,7 +10,6 @@ import {
   notebooks,
   type Course,
 } from "../db/schema.js";
-import { z } from "zod";
 
 const serializeCourse = (course: Course) => ({
   ...course,
@@ -43,6 +44,7 @@ export const getAllCourses = async (
       .select()
       .from(courses)
       .where(eq(courses.userId, userID));
+
     res.status(200).json(result.map(serializeCourse));
   } catch {
     res.status(500).json({ error: "Internal server error" });
@@ -241,6 +243,7 @@ export const deleteCourse = async (
     await db
       .delete(courses)
       .where(and(eq(courses.id, courseID), eq(courses.userId, userID)));
+
     res.status(204).send();
   } catch (error) {
     if (

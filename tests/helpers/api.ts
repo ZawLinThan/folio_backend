@@ -12,7 +12,7 @@ if (!baseUrl || !token || !otherToken || token === otherToken) {
 }
 
 // Wire payloads are checked by runtime assertions in each contract test.
-export async function request<T = any>(
+export async function request<T = unknown>(
   method: string,
   path: string,
   body?: unknown,

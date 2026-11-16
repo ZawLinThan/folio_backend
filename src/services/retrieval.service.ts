@@ -100,6 +100,7 @@ export const getSessionDocumentIds = async (
         eq(documents.status, "ready"),
       ),
     );
+
   return rows.map((row) => row.documentId);
 };
 

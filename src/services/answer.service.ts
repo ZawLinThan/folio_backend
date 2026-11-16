@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { chatStructured } from "../config/openRouterAI.js";
 import { ModelOutputError } from "../lib/errors.js";
 import type { RetrievedChunk } from "./retrieval.service.js";
@@ -41,6 +42,7 @@ export const generateAnswer = async (
   });
 
   const ids = [...new Set(result.chunkIds)];
+
   const sources = ids.map((id) => {
     const source = chunks.find((chunk) => chunk.chunkId === id);
 

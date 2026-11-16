@@ -7,13 +7,13 @@ import type { Request, Response } from "express";
  * Respond with 200 FlashcardSet[]; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const getAllFlashCardsSets = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -23,13 +23,13 @@ export const getAllFlashCardsSets = async (
  * Respond with 201 FlashcardSet; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const createFlashcardSet = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -39,13 +39,13 @@ export const createFlashcardSet = async (
  * Respond with 201 FlashcardSet (fetch cards separately); serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const generateFlashcards = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -55,13 +55,13 @@ export const generateFlashcards = async (
  * Respond with 200 Flashcard[]; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const getFlashcardsBySetId = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -71,13 +71,13 @@ export const getFlashcardsBySetId = async (
  * Respond with 201 Flashcard; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const addFlashcardToSet = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -87,13 +87,13 @@ export const addFlashcardToSet = async (
  * Respond with 200 Flashcard; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const updateSingleFlashcard = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -103,13 +103,13 @@ export const updateSingleFlashcard = async (
  * Respond with 204 without a body; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const deleteSingleFlashcard = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};
 
 /**
@@ -119,11 +119,11 @@ export const deleteSingleFlashcard = async (
  * Respond with 204 without a body; serialize timestamps as ISO strings without an envelope.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
- * @param req - Authenticated Express request; use req.user.id for ownership.
- * @param res - Express response carrying the documented JSON payload/status.
+ * @param _req - Authenticated Express request; use the request user id for ownership.
+ * @param _res - Express response carrying the documented JSON payload/status.
  * @returns Resolves after sending the response once implemented.
  */
 export const deleteFlashcardSet = async (
-  req: Request,
-  res: Response,
+  _req: Request,
+  _res: Response,
 ): Promise<void> => {};

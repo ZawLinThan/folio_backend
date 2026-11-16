@@ -29,6 +29,7 @@ function rows(value: unknown[]) {
     from: () => ({ where: () => ({ limit: async () => value }) }),
   } as never);
 }
+
 beforeEach(() => jest.clearAllMocks());
 
 it.each([renameCourse, editNotebook, deleteNotebook])(

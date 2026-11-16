@@ -1,7 +1,8 @@
-import { env } from "./env.js";
 import OpenAI from "openai";
-import { ChatRequest } from "../types/index.js";
 import { z } from "zod";
+
+import { env } from "./env.js";
+import { ChatRequest } from "../types/index.js";
 import { ModelOutputError } from "../lib/errors.js";
 import {
   scheduleProviderRequest,
@@ -95,9 +96,11 @@ const providerValidationError = <T>(
     (z.toJSONSchema(schema) as { required?: string[] }).required ?? [];
   const missing =
     failure.message?.match(/missing properties:\s*([^\n]+)/)?.[1] ?? "";
+
   const issues = required
     .filter((key) => missing.includes(`'${key}'`))
     .map((path) => ({ path, code: "missing_property" }));
+
   return new ModelOutputError(
     "The provider rejected the model's output schema.",
     "provider_schema_validation",
