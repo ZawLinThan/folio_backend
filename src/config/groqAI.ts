@@ -1,7 +1,8 @@
-import { env } from "./env.js";
 import OpenAI from "openai";
-import { ChatRequest } from "../types/index.js";
 import { z } from "zod";
+
+import { env } from "./env.js";
+import { ChatRequest } from "../types/index.js";
 import { ModelOutputError } from "../lib/errors.js";
 import {
   scheduleProviderRequest,
@@ -28,6 +29,7 @@ export const client = new OpenAI({
  */
 const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
   let value: unknown;
+
   try {
     value = JSON.parse(content);
   } catch {
@@ -36,7 +38,9 @@ const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
       "invalid_json",
     );
   }
+
   const result = schema.safeParse(value);
+
   if (!result.success) {
     const issues = result.error.issues.slice(0, 8).map((issue) => ({
       path: issue.path.map(String).join(".").slice(0, 160) || "$",
@@ -48,6 +52,7 @@ const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
       issues,
     );
   }
+
   return result.data;
 };
 
@@ -81,6 +86,7 @@ const providerValidationError = <T>(
       }
     }
   }
+
   /**
    * Some providers supply only a textual missing-property diagnostic. Match only
    * known top-level schema fields rather than copying an arbitrary provider message.
@@ -89,9 +95,11 @@ const providerValidationError = <T>(
     (z.toJSONSchema(schema) as { required?: string[] }).required ?? [];
   const missing =
     failure.message?.match(/missing properties:\s*([^\n]+)/)?.[1] ?? "";
+
   const issues = required
     .filter((key) => missing.includes(`'${key}'`))
     .map((path) => ({ path, code: "missing_property" }));
+
   return new ModelOutputError(
     "The provider rejected the model's output schema.",
     "provider_schema_validation",
@@ -160,6 +168,7 @@ export const ChatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
           return client.chat.completions.create(request);
         },
       );
+
       if (response.choices[0]?.finish_reason === "length") {
         throw new ModelOutputError(
           "The model response was truncated.",
@@ -186,10 +195,13 @@ export const ChatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
           ? error
           : providerValidationError(error, props.schema);
       validation.correctionAttempted = attempt === 1;
-      if (attempt === 1) throw validation;
+      if (attempt === 1) {
+        throw validation;
+      }
       correction = validation;
     }
   }
+
   throw new ModelOutputError(
     "The model could not produce valid research data.",
   );

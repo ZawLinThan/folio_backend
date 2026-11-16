@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+
 import { workerRedis } from "../config/redis.js";
 import { processDocument } from "../services/ingest.service.js";
 import { Sentry } from "../config/sentry.js";

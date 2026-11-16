@@ -1,17 +1,20 @@
-import { env } from "../config/env.js";
 import type { Request, Response } from "express";
-import type {
-  ConfirmFileUploadReq,
-  GetPresignedUrlReq,
-} from "../types/index.js";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { s3 } from "../config/r2.js";
 import {
   DeleteObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
+import { and, desc, eq } from "drizzle-orm";
+import { z } from "zod";
+
+import { env } from "../config/env.js";
+import type {
+  ConfirmFileUploadReq,
+  GetPresignedUrlReq,
+} from "../types/index.js";
+import { s3 } from "../config/r2.js";
 import { db } from "../db/index.js";
 import {
   chatSessionDocuments,
@@ -20,11 +23,9 @@ import {
   notebooks,
   tests,
 } from "../db/schema.js";
-import { and, desc, eq } from "drizzle-orm";
 import { documentQueue } from "../queue/document.queue.js";
 import { updateDocumentStatus } from "../services/ingest.service.js";
 import { Sentry } from "../config/sentry.js";
-import { z } from "zod";
 /**
  * @description Controller function to generate a presigned URL for uploading a file to S3.
  * File size limit is 20MB. Presigned URL expires in 3600 seconds.
@@ -45,14 +46,15 @@ export const getPresignedUrl = async (req: Request, res: Response) => {
     const { fileName, contentType, size } = req.body as GetPresignedUrlReq;
 
     const MAX_SIZE = 20 * 1024 * 1024; // 20MB
+
     if (size > MAX_SIZE) {
       return res.status(400).json({ error: "File too large" });
     }
 
-    // check the allowed type
     const key = `${id}/${Date.now()}-${fileName.replace(/\s/g, "-")}`;
 
     console.log("about to send req to r2");
+
     const uploadUrl = await getSignedUrl(
       s3,
       new PutObjectCommand({
@@ -63,6 +65,7 @@ export const getPresignedUrl = async (req: Request, res: Response) => {
       { expiresIn: 3600 },
     );
     console.log("Got Presigned");
+
     res.status(200).json({
       uploadUrl,
       key,
@@ -233,11 +236,13 @@ export const getAllDocuments = async (
           and(eq(notebooks.id, rawNotebookId), eq(notebooks.userId, userId)),
         )
         .limit(1);
+
       if (!notebook) {
         res.status(404).json({ error: "Notebook not found" });
         return;
       }
     }
+
     const ownedDocuments = await db
       .select()
       .from(documents)
@@ -325,29 +330,39 @@ export const getDocumentFile = async (
 ): Promise<void> => {
   const userId = req.user?.id;
   const id = req.params.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+
   if (typeof id !== "string" || !z.uuid().safeParse(id).success) {
     res.status(400).json({ error: "Invalid document ID" });
     return;
   }
+
   try {
     const [document] = await db
       .select()
       .from(documents)
       .where(and(eq(documents.id, id), eq(documents.userId, userId)))
       .limit(1);
+
     if (!document) {
       res.status(404).json({ error: "Document not found" });
       return;
     }
+
     const object = await s3.send(
       new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: document.r2Key }),
     );
-    if (!object.Body) throw new Error("Document file has no body");
+
+    if (!object.Body) {
+      throw new Error("Document file has no body");
+    }
+
     const bytes = await object.Body.transformToByteArray();
+
     res.setHeader("Content-Type", "application/octet-stream");
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");

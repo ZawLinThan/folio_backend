@@ -12,7 +12,7 @@ if (!baseUrl || !token || !otherToken || token === otherToken) {
 }
 
 // Wire payloads are checked by runtime assertions in each contract test.
-export async function request<T = any>(
+export async function request<T = unknown>(
   method: string,
   path: string,
   body?: unknown,
@@ -29,10 +29,12 @@ export async function request<T = any>(
   });
   const text = await response.text();
   let data: T;
+
   if (text) {
     expect(response.headers.get("content-type")).toMatch(/application\/json/);
     data = JSON.parse(text);
   }
+
   return { status: response.status, data: data!, text };
 }
 
@@ -72,20 +74,26 @@ export function resources() {
     },
     async clean() {
       const failures: string[] = [];
+
       for (const path of paths) {
         try {
           const result = await request("DELETE", path);
-          if (![204, 404].includes(result.status))
+
+          if (![204, 404].includes(result.status)) {
             failures.push(`${path}: ${result.status}`);
+          }
         } catch (cause) {
           failures.push(
             `${path}: ${cause instanceof Error ? cause.message : String(cause)}`,
           );
         }
       }
+
       paths.length = 0;
-      if (failures.length)
+
+      if (failures.length) {
         throw new Error(`Fixture cleanup failed: ${failures.join(", ")}`);
+      }
     },
   };
 }
@@ -97,7 +105,9 @@ export async function createCourse(cleanup: ReturnType<typeof resources>) {
     semester: "Test",
   };
   const result = await request("POST", "/api/courses", input);
-  if (result.data?.id) cleanup.track(`/api/courses/${result.data.id}`);
+  if (result.data?.id) {
+    cleanup.track(`/api/courses/${result.data.id}`);
+  }
   expect(result.status).toBe(201);
   record(result.data, input);
   return result.data;
@@ -114,7 +124,9 @@ export async function pollDocument(id: string, timeoutMs = 60000) {
     expect(["pending", "queued", "processing", "ready", "failed"]).toContain(
       last.status,
     );
-    if (["ready", "failed"].includes(last.status)) return last;
+    if (["ready", "failed"].includes(last.status)) {
+      return last;
+    }
     await new Promise((resolve) => setTimeout(resolve, 250));
   } while (Date.now() < deadline);
   throw new Error(

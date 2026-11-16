@@ -138,6 +138,7 @@ describe("retrieval service", () => {
         }),
       ).rejects.toThrow();
     }
+
     expect(db.select).not.toHaveBeenCalled();
     expect(embedQuery).not.toHaveBeenCalled();
   });

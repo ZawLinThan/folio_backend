@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import { protectRoute } from "../middleware/protectRoute.js";
 import {
   getAllNotebooks,
@@ -10,6 +11,7 @@ import {
 const router = Router();
 
 router.use(protectRoute);
+
 router.get("/", getAllNotebooks);
 router.post("/", createNotebook);
 router.patch("/:id", editNotebook);

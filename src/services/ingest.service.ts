@@ -72,6 +72,7 @@ export const downloadFromR2 = async (r2Key: string): Promise<Buffer> => {
   if (!object.Body) {
     throw new Error("R2 document response has no body");
   }
+
   return Buffer.from(await object.Body.transformToByteArray());
 };
 
@@ -280,6 +281,7 @@ const runMineru = async (
     let stdout = "";
     let stderr = "";
     let settled = false;
+
     const child = spawn(command, args, {
       shell: false,
       stdio: ["ignore", "pipe", "pipe"],
@@ -293,10 +295,12 @@ const runMineru = async (
 
       settled = true;
       clearTimeout(timeout);
+
       if (error) {
         reject(error);
         return;
       }
+
       resolve();
     };
 
@@ -369,6 +373,7 @@ const extractPdf = async (file: Buffer): Promise<string> => {
     }
 
     const { text } = await extractPdfText(pdf, { mergePages: false });
+
     const pages = text
       .map((page, index) => {
         const pageText = normaliseText(page).trim();
@@ -391,6 +396,7 @@ const extractDocx = async (file: Buffer): Promise<string> => {
   }
 
   const xml = await documentXml.async("string");
+
   if (xml.length > MAX_DOCX_XML_CHARACTERS) {
     throw new Error(
       `DOCX XML exceeds the ${MAX_DOCX_XML_CHARACTERS.toLocaleString()} character limit.`,
@@ -403,6 +409,14 @@ const extractDocx = async (file: Buffer): Promise<string> => {
   );
 };
 
+/**
+ * Extract plain text from an uploaded document.
+ *
+ * @param file - The raw document bytes.
+ * @param fileType - The stored document type.
+ * @param options - Extraction options, such as math-aware PDF parsing.
+ * @returns The extracted text, or an empty string for an unsupported type.
+ */
 export const extractText = async (
   file: Buffer,
   fileType: Document["fileType"],
@@ -421,10 +435,19 @@ export const extractText = async (
 const CHUNK_CHARACTERS = 2000;
 const CHUNK_OVERLAP = 200;
 
+/**
+ * Split extracted text into overlapping, page-aware chunks.
+ *
+ * @param text - The extracted document text.
+ * @returns Chunks with their content, index, page number, and token estimate.
+ */
 export const chunkText = (text: string): TextChunk[] => {
   const result: TextChunk[] = [];
   const normalized = normaliseText(text).trim();
-  if (!normalized) return result;
+
+  if (!normalized) {
+    return result;
+  }
 
   // Selectable PDFs contain these page markers. Other extractors do not
   // provide reliable page numbers, so their chunks retain null metadata.
@@ -469,13 +492,17 @@ export const chunkText = (text: string): TextChunk[] => {
       }));
 
       let start = 0;
+
       while (start < content.length) {
         let end = Math.min(start + CHUNK_CHARACTERS, content.length);
+
         const enclosing = equations.find(
           (equation) => equation.start < end && end < equation.end,
         );
-        if (enclosing)
+
+        if (enclosing) {
           end = enclosing.start > start ? enclosing.start : enclosing.end;
+        }
 
         if (end < content.length && end - start >= CHUNK_CHARACTERS / 2) {
           const window = content.slice(start, end);
@@ -515,6 +542,7 @@ export const chunkText = (text: string): TextChunk[] => {
         }
 
         const chunk = content.slice(start, end).trim();
+
         if (chunk) {
           result.push({
             content: chunk,
@@ -529,25 +557,32 @@ export const chunkText = (text: string): TextChunk[] => {
         }
 
         let next = end - start <= CHUNK_OVERLAP ? end : end - CHUNK_OVERLAP;
+
         const overlapEquation = equations.find(
           (equation) => equation.start < next && next < equation.end,
         );
 
-        if (overlapEquation)
+        if (overlapEquation) {
           next =
             overlapEquation.start > start
               ? overlapEquation.start
               : overlapEquation.end;
+        }
 
         // Begin overlap at a word boundary where possible.
         if (!overlapEquation) {
           const space = content.slice(next, end).search(/\s/);
-          if (space >= 0) next += space + 1;
+
+          if (space >= 0) {
+            next += space + 1;
+          }
         }
+
         start = Math.max(start + 1, next);
       }
     }
   }
+
   return result;
 };
 
@@ -576,6 +611,7 @@ const embedChunks = async (
         `Embedding must be a finite, nonzero ${EMBEDDING_DIMENSIONS}-dimension vector.`,
       );
     }
+
     embedded.push({ ...chunk, embedding });
   }
 
@@ -648,7 +684,7 @@ export const updateDocumentStatus = async (
         area: "document-status-update",
       },
     });
-    throw new Error("Failed to update the document status");
+    throw new Error("Failed to update the document status", { cause: error });
   }
 };
 
@@ -657,6 +693,12 @@ type Props = {
   job: Job<DocumentJob, void>;
 };
 
+/**
+ * Run the ingestion pipeline for a queued document.
+ *
+ * @param props - The document identifier and the queue job tracking progress.
+ * @returns Resolves once the document is ready and its chunks are stored.
+ */
 export const processDocument = async ({
   documentId,
   job,
@@ -670,6 +712,7 @@ export const processDocument = async ({
       .from(documents)
       .where(eq(documents.id, documentId))
       .limit(1);
+
     const document = documentResult[0];
 
     await job.updateProgress(10);
@@ -704,6 +747,7 @@ export const processDocument = async ({
 
     // chunking
     const chunks: TextChunk[] = chunkText(text);
+
     console.log("Chunked text");
     await job.updateProgress(55);
 

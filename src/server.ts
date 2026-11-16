@@ -1,10 +1,11 @@
 import "./config/sentry.js";
-import { env } from "./config/env.js";
+
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import * as Sentry from "@sentry/node";
 
+import { env } from "./config/env.js";
 import notebooksRouter from "./routes/notebooks.route.js";
 import documentsRouter from "./routes/documents.route.js";
 import chatRouter from "./routes/chat.route.js";

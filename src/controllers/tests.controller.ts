@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { randomUUID } from "node:crypto";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+
 import { db } from "../db/index.js";
 import {
   chunks,
@@ -42,6 +43,7 @@ const modelQuestionSchema = z
     const normalisedOptions = options.map((option) =>
       option.trim().toLocaleLowerCase(),
     );
+
     if (new Set(normalisedOptions).size !== normalisedOptions.length) {
       context.addIssue({
         code: "custom",
@@ -49,6 +51,7 @@ const modelQuestionSchema = z
         message: "Multiple-choice options must be distinct.",
       });
     }
+
     if (
       options.length === 4 &&
       !normalisedOptions.includes(answer.trim().toLocaleLowerCase())
@@ -70,6 +73,7 @@ const generatedTestSchema = z
     const prompts = questions.map((question) =>
       question.prompt.trim().toLocaleLowerCase(),
     );
+
     if (new Set(prompts).size !== prompts.length) {
       context.addIssue({
         code: "custom",
@@ -81,6 +85,7 @@ const generatedTestSchema = z
     const multipleChoiceCount = questions.filter(
       (question) => question.options.length === 4,
     ).length;
+
     if (multipleChoiceCount !== 6) {
       context.addIssue({
         code: "custom",
@@ -171,6 +176,7 @@ export const generateTest = async (
     typeof body.notebookId === "string" ? body.notebookId.trim() : "";
   const isReferenceMode = body.mode === "reference";
   const isNotebookMode = body.mode === "notebook";
+
   const referenceFileId =
     typeof body.referenceFileId === "string"
       ? body.referenceFileId.trim()
@@ -207,6 +213,7 @@ export const generateTest = async (
       .from(notebooks)
       .where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)))
       .limit(1);
+
     if (!notebook) {
       res.status(404).json({ error: "Notebook not found" });
       return;
@@ -236,6 +243,7 @@ export const generateTest = async (
     }
 
     let referenceDocument: { id: string; name: string } | undefined;
+
     if (isReferenceMode && referenceFileId) {
       [referenceDocument] = await db
         .select({ id: documents.id, name: documents.name })
@@ -249,6 +257,7 @@ export const generateTest = async (
           ),
         )
         .limit(1);
+
       if (!referenceDocument) {
         res.status(404).json({ error: "Reference document not found" });
         return;
@@ -279,9 +288,11 @@ export const generateTest = async (
       ...chunk,
       documentName: documentNames.get(chunk.documentId) ?? "Study document",
     }));
+
     const studyDocumentIds = new Set(
       readyStudyDocuments.map((document) => document.id),
     );
+
     const studySource = compactSource(
       namedChunks.filter((chunk) => studyDocumentIds.has(chunk.documentId)),
       MAX_STUDY_CONTEXT_CHARACTERS,
@@ -330,6 +341,7 @@ export const generateTest = async (
       ...question,
       id: randomUUID(),
     }));
+
     const savedTest = await db.transaction(async (tx) => {
       const [test] = await tx
         .insert(tests)
@@ -382,6 +394,7 @@ export const getAllTests = async (
       .select()
       .from(tests)
       .where(eq(tests.userId, userId));
+
     res.status(200).json(ownedTests.map(serialiseTest));
   } catch {
     res.status(500).json({ error: "Internal server error" });

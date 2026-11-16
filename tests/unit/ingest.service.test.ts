@@ -126,6 +126,7 @@ const createPdf = (text: string): Buffer => {
   for (const offset of offsets.slice(1)) {
     pdf += `${String(offset).padStart(10, "0")} 00000 n \n`;
   }
+
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
   return Buffer.from(pdf, "ascii");
@@ -279,6 +280,7 @@ it("keeps DOCX and display equations intact across chunk boundaries", () => {
   for (const equation of equations) {
     expect(chunks.some((chunk) => chunk.content.includes(equation))).toBe(true);
   }
+
   expect(chunks.at(-1)?.content).toContain("Final explanation.");
 });
 

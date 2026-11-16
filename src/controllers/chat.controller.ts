@@ -1,7 +1,9 @@
 import type { Request, Response } from "express";
+import { asc, eq, inArray, and, sql } from "drizzle-orm";
+import { z } from "zod";
+
 import { db } from "../db/index.js";
 import { Sentry } from "../config/sentry.js";
-import { asc, eq, inArray, and, sql } from "drizzle-orm";
 import {
   chatSessions,
   chatSessionDocuments,
@@ -10,7 +12,6 @@ import {
   messageSources,
   chunks,
 } from "../db/schema.js";
-import { z } from "zod";
 import {
   retrieveForSession,
   RetrievalSessionNotFoundError,
@@ -116,6 +117,7 @@ export const getAllChatSessions = async (req: Request, res: Response) => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+
   try {
     const sessions = await db
       .select()
@@ -217,6 +219,7 @@ export const getSingleChatSession = async (req: Request, res: Response) => {
       );
 
     const messageIds = chatSessionMessages.map((message) => message.id);
+
     const citedSources =
       messageIds.length === 0
         ? []
@@ -250,7 +253,7 @@ export const getSingleChatSession = async (req: Request, res: Response) => {
         ),
       })),
     });
-  } catch (error) {
+  } catch {
     res.status(500).json({
       error: "Failed to retrieve chat session",
     });
@@ -334,6 +337,7 @@ export const answerQuestion = async (req: Request, res: Response) => {
 
       return { userMessage, assistantMessage };
     });
+
     res.status(201).json({ ...saved, ...answer });
   } catch (error) {
     if (error instanceof RetrievalSessionNotFoundError) {
@@ -384,7 +388,7 @@ export const deleteChatSession = async (req: Request, res: Response) => {
     }
 
     res.status(204).send();
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: "Failed to delete chat session" });
   }
 };

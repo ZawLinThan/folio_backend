@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+
 import { supabase } from "../config/supabase.js";
 import { Sentry } from "../config/sentry.js";
 
@@ -28,6 +29,7 @@ export const protectRoute = async (
 
   try {
     const { data, error } = await supabase.auth.getUser(match[1]);
+
     if (error || !data.user) {
       res
         .status(401)

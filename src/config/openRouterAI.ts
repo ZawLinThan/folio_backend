@@ -1,18 +1,26 @@
-import { env } from "./env.js";
 import { OpenRouter } from "@openrouter/sdk";
-import { ChatRequest } from "../types/index.js";
+import { SendChatCompletionRequestResponse } from "@openrouter/sdk/models/operations";
 import z from "zod";
+
+import { env } from "./env.js";
+import { ChatRequest } from "../types/index.js";
 import { ModelOutputError } from "../lib/errors.js";
 import {
   scheduleProviderRequest,
   tagProviderError,
 } from "../lib/providerRateLimit.js";
 import { beforeProviderCall } from "../lib/providerCalls.js";
-import { SendChatCompletionRequestResponse } from "@openrouter/sdk/models/operations";
+
 
 const openrouter = new OpenRouter({
   apiKey: env.OPENROUTER_API_KEY,
 });
+
+/** A single completion choice returned by the OpenRouter chat API. */
+type ChatChoice = {
+  finishReason?: string;
+  message?: { content?: string };
+};
 
 /**
  * Parses model JSON and validates it against the requested schema.
@@ -25,6 +33,7 @@ const openrouter = new OpenRouter({
  */
 const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
   let value: unknown;
+
   try {
     value = JSON.parse(content);
   } catch {
@@ -33,7 +42,9 @@ const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
       "invalid_json",
     );
   }
+
   const result = schema.safeParse(value);
+
   if (!result.success) {
     const issues = result.error.issues.slice(0, 8).map((issue) => ({
       path: issue.path.map(String).join(".").slice(0, 160) || "$",
@@ -45,6 +56,7 @@ const parseModelOutput = <T>(content: string, schema: z.ZodType<T>): T => {
       issues,
     );
   }
+
   return result.data;
 };
 
@@ -78,6 +90,7 @@ const providerValidationError = <T>(
       }
     }
   }
+
   /**
    * Some providers supply only a textual missing-property diagnostic. Match only
    * known top-level schema fields rather than copying an arbitrary provider message.
@@ -86,9 +99,11 @@ const providerValidationError = <T>(
     (z.toJSONSchema(schema) as { required?: string[] }).required ?? [];
   const missing =
     failure.message?.match(/missing properties:\s*([^\n]+)/)?.[1] ?? "";
+
   const issues = required
     .filter((key) => missing.includes(`'${key}'`))
     .map((path) => ({ path, code: "missing_property" }));
+
   return new ModelOutputError(
     "The provider rejected the model's output schema.",
     "provider_schema_validation",
@@ -155,7 +170,7 @@ export const chatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
           },
         );
 
-      const choices = (response as any)?.choices;
+      const choices = (response as { choices?: ChatChoice[] }).choices;
 
       if (choices?.[0]?.finishReason === "length") {
         throw new ModelOutputError(
@@ -165,7 +180,7 @@ export const chatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
       }
 
       return parseModelOutput(
-        choices?.[0]?.message.content || "",
+        choices?.[0]?.message?.content || "",
         props.schema,
       );
     } catch (error) {
@@ -183,10 +198,13 @@ export const chatStructured = async <T>(props: ChatRequest<T>): Promise<T> => {
           ? error
           : providerValidationError(error, props.schema);
       validation.correctionAttempted = attempt === 1;
-      if (attempt === 1) throw validation;
+      if (attempt === 1) {
+        throw validation;
+      }
       correction = validation;
     }
   }
+
   throw new ModelOutputError("The model could not produce valid data.");
 };
 
@@ -206,7 +224,6 @@ export const embedText = async (text: string): Promise<number[]> => {
         encodingFormat: "float",
       },
     });
-    //console.log(embedding.data[0].embedding.length);
 
     // Reject unexpected SDK response variants before reading the vector.
     if (
@@ -215,6 +232,7 @@ export const embedText = async (text: string): Promise<number[]> => {
     ) {
       throw new ModelOutputError("The embedding response contained no vector.");
     }
+
     return embedding.data[0].embedding;
   } catch (error) {
     throw tagProviderError(error, "openrouter embedding");

@@ -32,11 +32,13 @@ function res() {
     json: jest.fn(),
   } as unknown as Response;
 }
+
 function rows(result: unknown[]) {
   select.mockReturnValueOnce({
     from: () => ({ where: async () => result }),
   } as never);
 }
+
 beforeEach(() => jest.clearAllMocks());
 
 it.each(["pending", "queued", "processing", "failed"])(

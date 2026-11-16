@@ -1,5 +1,7 @@
-import { env } from "./env.js";
 import { Redis } from "ioredis";
+
+import { env } from "./env.js";
+
 
 export const workerRedis = new Redis(env.REDIS_URL, {
   maxRetriesPerRequest: null,

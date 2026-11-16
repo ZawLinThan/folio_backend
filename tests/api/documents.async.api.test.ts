@@ -124,7 +124,9 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     documentId: finished.id,
     count: 3,
   });
-  if (generated.data?.id) cleanup.track(`/api/flashcards/${generated.data.id}`);
+  if (generated.data?.id) {
+    cleanup.track(`/api/flashcards/${generated.data.id}`);
+  }
   expect(generated.status).toBe(201);
   record(generated.data, { documentId: finished.id, courseId });
   const cards = await request("GET", `/api/flashcards/${generated.data.id}`);
@@ -185,6 +187,7 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
     expect(question.answer.trim()).not.toBe("");
     for (const option of question.options) expect(typeof option).toBe("string");
   }
+
   expect(await request("DELETE", testPath)).toMatchObject({
     status: 204,
     text: "",

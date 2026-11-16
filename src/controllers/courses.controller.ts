@@ -1,6 +1,8 @@
 import type { Request, Response } from "express";
-import { db } from "../db/index.js";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
+
+import { db } from "../db/index.js";
 import {
   courses,
   documents,
@@ -8,7 +10,6 @@ import {
   notebooks,
   type Course,
 } from "../db/schema.js";
-import { z } from "zod";
 
 const serializeCourse = (course: Course) => ({
   ...course,
@@ -36,11 +37,13 @@ export const getAllCourses = async (
     res.status(401).json({ error: "Unauthorized user" });
     return;
   }
+
   try {
     const result = await db
       .select()
       .from(courses)
       .where(eq(courses.userId, userID));
+
     res.status(200).json(result.map(serializeCourse));
   } catch {
     res.status(500).json({ error: "Internal server error" });
@@ -105,6 +108,7 @@ export const createCourse = async (
       res.status(500).json({ error: "Failed to create course" });
       return;
     }
+
     res.status(201).json(serializeCourse(course));
   } catch (error) {
     if (
@@ -116,6 +120,7 @@ export const createCourse = async (
       res.status(409).json({ error: "Course already exists" });
       return;
     }
+
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -157,6 +162,7 @@ export const getCourseById = async (
       res.status(404).json({ error: "Course not found" });
       return;
     }
+
     res.status(200).json(serializeCourse(course));
   } catch {
     res.status(500).json({ error: "Internal server error" });
@@ -231,6 +237,7 @@ export const deleteCourse = async (
     await db
       .delete(courses)
       .where(and(eq(courses.id, courseID), eq(courses.userId, userID)));
+
     res.status(204).send();
   } catch (error) {
     if (
@@ -242,6 +249,7 @@ export const deleteCourse = async (
       res.status(409).json({ error: "Course has dependent records" });
       return;
     }
+
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -256,24 +264,29 @@ export const renameCourse = async (
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
+
   const id = z.uuid().safeParse(req.params.id);
   const body = z
     .object({ name: z.string().trim().min(1).max(255) })
     .safeParse(req.body);
+
   if (!id.success || !body.success) {
     res.status(400).json({ error: "Invalid course ID or name" });
     return;
   }
+
   try {
     const [course] = await db
       .update(courses)
       .set({ name: body.data.name, updatedAt: new Date() })
       .where(and(eq(courses.id, id.data), eq(courses.userId, userId)))
       .returning();
+
     if (!course) {
       res.status(404).json({ error: "Course not found" });
       return;
     }
+
     res.status(200).json(serializeCourse(course));
   } catch {
     res.status(500).json({ error: "Internal server error" });
