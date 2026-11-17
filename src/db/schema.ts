@@ -53,6 +53,9 @@ export const notebooks = pgTable("notebooks", {
   // fk: courseId -> courses(id)
 });
 
+/**
+ *
+ */
 export type DocumentStatus =
   "pending" | "queued" | "processing" | "ready" | "failed";
 
@@ -237,6 +240,14 @@ export const tests = pgTable("tests", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id").notNull(),
   title: varchar("title", { length: 100 }),
+  notebookId: uuid("notebook_id").references(() => notebooks.id, {
+    onDelete: "set null",
+  }),
+  status: text("status")
+    .$type<"queued" | "processing" | "ready" | "failed">()
+    .default("queued")
+    .notNull(),
+  errorMessage: text("error_message"),
   referenceFileId: uuid("ref_file_id").references(() => documents.id, {
     onDelete: "restrict",
   }), // the sample test file user uploaded
@@ -246,6 +257,9 @@ export const tests = pgTable("tests", {
   // referenceFileId -> documentts(id)
 });
 
+/**
+ *
+ */
 export type TestQuestion = {
   id: string;
   prompt: string;
@@ -266,38 +280,110 @@ export const testContents = pgTable("test_contents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+/**
+ *
+ */
 export type Profile = typeof profiles.$inferSelect;
+/**
+ *
+ */
 export type NewProfile = typeof profiles.$inferInsert;
 
+/**
+ *
+ */
 export type Course = typeof courses.$inferSelect;
+/**
+ *
+ */
 export type NewCourse = typeof courses.$inferInsert;
 
+/**
+ *
+ */
 export type Document = typeof documents.$inferSelect;
+/**
+ *
+ */
 export type NewDocument = typeof documents.$inferInsert;
 
+/**
+ *
+ */
 export type Chunk = typeof chunks.$inferSelect;
+/**
+ *
+ */
 export type NewChunk = typeof chunks.$inferInsert;
 
+/**
+ *
+ */
 export type ChatSession = typeof chatSessions.$inferSelect;
+/**
+ *
+ */
 export type NewChatSession = typeof chatSessions.$inferInsert;
 
+/**
+ *
+ */
 export type Message = typeof messages.$inferSelect;
+/**
+ *
+ */
 export type NewMessage = typeof messages.$inferInsert;
 
+/**
+ *
+ */
 export type MessageSource = typeof messageSources.$inferSelect;
+/**
+ *
+ */
 export type NewMessageSource = typeof messageSources.$inferInsert;
 
+/**
+ *
+ */
 export type FlashcardSet = typeof flashcardSets.$inferSelect;
+/**
+ *
+ */
 export type NewFlashcardSet = typeof flashcardSets.$inferInsert;
 
+/**
+ *
+ */
 export type Flashcard = typeof flashcards.$inferSelect;
+/**
+ *
+ */
 export type NewFlashcard = typeof flashcards.$inferInsert;
 
+/**
+ *
+ */
 export type Test = typeof tests.$inferSelect;
+/**
+ *
+ */
 export type NewTest = typeof tests.$inferInsert;
 
+/**
+ *
+ */
 export type TestContent = typeof testContents.$inferSelect;
+/**
+ *
+ */
 export type NewTestContent = typeof testContents.$inferInsert;
 
+/**
+ *
+ */
 export type NoteBook = typeof notebooks.$inferSelect;
+/**
+ *
+ */
 export type NewNoteBook = typeof notebooks.$inferInsert;

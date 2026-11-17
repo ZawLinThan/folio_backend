@@ -18,12 +18,19 @@ const profileName = (metadata: Record<string, unknown>, email?: string) => {
 };
 
 async function ensureProfile(user: NonNullable<Express.Request["user"]>) {
-  await db.insert(profiles).values({
-    id: user.id,
-    name: profileName(user.user_metadata, user.email),
-  }).onConflictDoNothing();
+  await db
+    .insert(profiles)
+    .values({
+      id: user.id,
+      name: profileName(user.user_metadata, user.email),
+    })
+    .onConflictDoNothing();
 
-  const [profile] = await db.select().from(profiles).where(eq(profiles.id, user.id));
+  const [profile] = await db
+    .select()
+    .from(profiles)
+    .where(eq(profiles.id, user.id));
+
   return profile;
 }
 
@@ -43,16 +50,23 @@ router.patch("/", async (req, res) => {
   const parsed = updateSchema.safeParse(req.body);
 
   if (!parsed.success) {
-    res.status(400).json({ error: "Preferred name must be at most 255 characters" });
+    res
+      .status(400)
+      .json({ error: "Preferred name must be at most 255 characters" });
+
     return;
   }
 
   try {
     await ensureProfile(req.user!);
-    const [profile] = await db.update(profiles).set({
-      name: parsed.data.preferredName || "Student",
-      updatedAt: new Date(),
-    }).where(eq(profiles.id, req.user!.id)).returning();
+    const [profile] = await db
+      .update(profiles)
+      .set({
+        name: parsed.data.preferredName || "Student",
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, req.user!.id))
+      .returning();
     res.json(profile);
   } catch {
     res.status(500).json({ error: "Unable to save profile" });

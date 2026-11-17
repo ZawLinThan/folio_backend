@@ -2,7 +2,7 @@
 
 Express and TypeScript backend for study documents, notebooks, courses, chat sessions, flashcards, and tests. It uses Supabase Auth, PostgreSQL with pgvector, Cloudflare R2, Redis/BullMQ, Groq, OpenRouter, and Sentry.
 
-The HTTP server and document worker run as separate processes. Document ingestion and retrieval are still under development: ingestion helpers currently throw `not implemented` errors, retrieval contains placeholders, and several controllers are empty stubs. Starting the services does not yet enable the complete RAG workflow.
+The HTTP server and background worker run as separate processes. The worker handles document ingestion and test generation on separate BullMQ queues.
 
 ## Prerequisites
 
@@ -160,7 +160,9 @@ In a second terminal, also in `backend`:
 npm run worker
 ```
 
-The API listens on `http://localhost:3000`. Port 3000 is currently hardcoded in `src/server.ts`; setting `PORT` does not change it. The worker consumes `document-processing` jobs with concurrency 2.
+The API listens on `http://localhost:3000`. Port 3000 is currently hardcoded in `src/server.ts`; setting `PORT` does not change it. The worker process consumes `document-processing` jobs with concurrency 2 and `test-generation` jobs with concurrency 1.
+
+`POST /api/tests/generate` validates the notebook and ready study documents, returns `202` with a queued test, and submits its ID to BullMQ. `GET /api/tests/:id` reports `queued`, `processing`, `ready`, or `failed`; poll until a terminal status. `GET /api/tests/:id/content` returns generated questions only after the test is ready. The worker reads stored extracted chunks, removes adjacent overlap, and retries failed generation up to three times.
 
 Check that the HTTP server responds:
 
@@ -218,7 +220,7 @@ npm start
 Run the compiled worker in a separate process:
 
 ```sh
-node dist/workers/document.worker.js
+node dist/src/workers/document.worker.js
 ```
 
 Provide environment variables to both processes, or keep `.env` in their working directory. Build output is written to `dist`.

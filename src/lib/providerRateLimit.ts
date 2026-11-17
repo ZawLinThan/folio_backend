@@ -17,7 +17,11 @@ type ProviderError = {
   retryAfterMs?: number;
 };
 
-/** Reads a provider error as an inspectable object, or undefined for non-objects. */
+/**
+ * Reads a provider error as an inspectable object, or undefined for non-objects.
+ * @param error The error value to inspect.
+ * @returns The provider error object, or undefined.
+ */
 const asProviderError = (error: unknown): ProviderError | undefined =>
   error !== null && typeof error === "object"
     ? (error as ProviderError)
@@ -263,6 +267,7 @@ export const scheduleProviderRequest = async <T>(
 ) => {
   try {
     const scheduler = schedulers.get(provider);
+
     return scheduler
       ? await scheduler.run(provider, tokens, request)
       : await request();

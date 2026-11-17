@@ -84,7 +84,8 @@ export const getPresignedUrl = async (req: Request, res: Response) => {
 
 /**
  * POST /api/documents/confirm
- * Verify the uploaded R2 key belongs to the user and exists; validate notebook/course ownership, create metadata and queue ingestion (extract, chunk, embed).
+ * Verify the uploaded R2 key belongs to the user and exists;
+ * validate notebook/course ownership, create metadata and queue ingestion (extract, chunk, embed).
  * ConfirmFileUploadReq: { name, originalName, r2Key, fileType, fileSize, hasMathFormula, courseId, notebookId }.
  * Response: 202 { documentId, status: "queued" }; GET /api/documents/:id polling reports later processing status.
  * Errors: { error: string } with 400 validation, 401 authentication,
@@ -100,6 +101,7 @@ export const ingestPipeline = async (req: Request, res: Response) => {
   // need to consider the file ingestion for the test generations based on the sample test
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -214,6 +216,7 @@ export const getAllDocuments = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -225,6 +228,7 @@ export const getAllDocuments = async (
       !z.uuid().safeParse(rawNotebookId).success)
   ) {
     res.status(400).json({ error: "notebookId must be a valid UUID" });
+
     return;
   }
 
@@ -240,6 +244,7 @@ export const getAllDocuments = async (
 
       if (!notebook) {
         res.status(404).json({ error: "Notebook not found" });
+
         return;
       }
     }
@@ -250,9 +255,9 @@ export const getAllDocuments = async (
       .where(
         typeof rawNotebookId === "string"
           ? and(
-              eq(documents.userId, userId),
-              eq(documents.notebookId, rawNotebookId),
-            )
+            eq(documents.userId, userId),
+            eq(documents.notebookId, rawNotebookId),
+          )
           : eq(documents.userId, userId),
       )
       .orderBy(desc(documents.createdAt));
@@ -290,11 +295,13 @@ export const getSingleDocument = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   if (!id) {
     res.status(400).json({ error: "Document ID is required" });
+
     return;
   }
 
@@ -308,6 +315,7 @@ export const getSingleDocument = async (
     // Looking up by both id and userId keeps another user's document indistinguishable from absent.
     if (!document) {
       res.status(404).json({ error: "Document not found" });
+
       return;
     }
 
@@ -324,7 +332,11 @@ export const getSingleDocument = async (
   }
 };
 
-/** Return the original file only to its owner for in-browser preview. */
+/**
+ * Return the original file only to its owner for in-browser preview.
+ * @param req
+ * @param res
+ */
 export const getDocumentFile = async (
   req: Request,
   res: Response,
@@ -334,11 +346,13 @@ export const getDocumentFile = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   if (typeof id !== "string" || !z.uuid().safeParse(id).success) {
     res.status(400).json({ error: "Invalid document ID" });
+
     return;
   }
 
@@ -351,6 +365,7 @@ export const getDocumentFile = async (
 
     if (!document) {
       res.status(404).json({ error: "Document not found" });
+
       return;
     }
 
@@ -395,11 +410,13 @@ export const deleteDocument = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   if (!id) {
     res.status(400).json({ error: "Document ID is required" });
+
     return;
   }
 
@@ -412,6 +429,7 @@ export const deleteDocument = async (
 
     if (!document) {
       res.status(404).json({ error: "Document not found" });
+
       return;
     }
 
@@ -426,6 +444,7 @@ export const deleteDocument = async (
       res.status(409).json({
         error: "Document is referenced by a test and cannot be deleted",
       });
+
       return;
     }
 
@@ -440,6 +459,7 @@ export const deleteDocument = async (
       res.status(409).json({
         error: "Document is used by a chat session and cannot be deleted",
       });
+
       return;
     }
 
@@ -497,11 +517,13 @@ export const editDocument = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   if (!id) {
     res.status(400).json({ error: "Document ID is required" });
+
     return;
   }
 
@@ -509,6 +531,7 @@ export const editDocument = async (
 
   if (!name || name.length > 255) {
     res.status(400).json({ error: "Invalid document name" });
+
     return;
   }
 
@@ -521,6 +544,7 @@ export const editDocument = async (
 
     if (!document) {
       res.status(404).json({ error: "Document not found" });
+
       return;
     }
 

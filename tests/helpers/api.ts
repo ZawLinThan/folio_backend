@@ -69,6 +69,7 @@ export function record(
 // Track only resources made by this suite. Cleanup failures fail the suite.
 export function resources() {
   const paths: string[] = [];
+
   return {
     track(path: string) {
       paths.unshift(path);
@@ -113,6 +114,7 @@ export async function createCourse(cleanup: ReturnType<typeof resources>) {
 
   expect(result.status).toBe(201);
   record(result.data, input);
+
   return result.data;
 }
 

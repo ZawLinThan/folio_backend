@@ -52,7 +52,8 @@ test("uploaded text is accepted asynchronously, isolated by owner and eventually
 
   const fileName = `jest-${randomUUID()}.txt`;
   const content =
-    "Photosynthesis converts light energy into chemical energy. Chlorophyll absorbs light in chloroplasts. Plants consume carbon dioxide and release oxygen.";
+    "Photosynthesis converts light energy into chemical energy. Chlorophyll absorbs light in chloroplasts. \
+    Plants consume carbon dioxide and release oxygen.";
   const size = Buffer.byteLength(content);
   const signed = await request("POST", "/api/documents/presign", {
     fileName,

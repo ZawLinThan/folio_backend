@@ -65,6 +65,11 @@ const EMBEDDING_DIMENSIONS = 2048;
 const INSERT_BATCH_SIZE = 100;
 
 // Download the document's bytes from R2.
+/**
+ *
+ * @param r2Key - The R2 object key for the document.
+ * @returns A promise that resolves to a Buffer containing the document's bytes.
+ */
 export const downloadFromR2 = async (r2Key: string): Promise<Buffer> => {
   const object = await s3.send(
     new GetObjectCommand({ Bucket: env.R2_BUCKET_NAME, Key: r2Key }),
@@ -163,6 +168,7 @@ const ommlToText = (nodes: XmlNodes): string =>
         case "m:f": {
           const numerator = part("m:num");
           const denominator = part("m:den");
+
           return numerator || denominator
             ? `(${numerator}) / (${denominator})`
             : "";
@@ -170,17 +176,20 @@ const ommlToText = (nodes: XmlNodes): string =>
         case "m:sSup": {
           const base = part("m:e");
           const superscript = part("m:sup");
+
           return superscript ? `${base}^(${superscript})` : base;
         }
         case "m:sSub": {
           const base = part("m:e");
           const subscript = part("m:sub");
+
           return subscript ? `${base}_(${subscript})` : base;
         }
         case "m:sSubSup": {
           const base = part("m:e");
           const subscript = part("m:sub");
           const superscript = part("m:sup");
+
           return `${base}${subscript ? `_(${subscript})` : ""}${
             superscript ? `^(${superscript})` : ""
           }`;
@@ -188,6 +197,7 @@ const ommlToText = (nodes: XmlNodes): string =>
         case "m:rad": {
           const degree = part("m:deg");
           const expression = part("m:e");
+
           return degree
             ? `root(${degree}, ${expression})`
             : `sqrt(${expression})`;
@@ -300,6 +310,7 @@ const runMineru = async (
 
       if (error) {
         reject(error);
+
         return;
       }
 
@@ -324,7 +335,8 @@ const runMineru = async (
     child.on("error", (error) => {
       finish(
         new Error(
-          `Could not start MinerU command "${command}". Install MinerU or set MINERU_COMMAND to the local mineru-kit executable.`,
+          `Could not start MinerU command "${command}". 
+          Install MinerU or set MINERU_COMMAND to the local mineru-kit executable.`,
           { cause: error },
         ),
       );
@@ -332,6 +344,7 @@ const runMineru = async (
     child.on("close", (code, signal) => {
       if (code === 0) {
         finish();
+
         return;
       }
 
@@ -355,6 +368,7 @@ const extractPdfWithMineru = async (file: Buffer): Promise<string> => {
   try {
     await writeFile(inputPath, file);
     await runMineru(inputPath, outputPath);
+
     return requireExtractedText(
       await readFile(outputPath, "utf8"),
       "MinerU PDF",
@@ -379,6 +393,7 @@ const extractPdf = async (file: Buffer): Promise<string> => {
     const pages = text
       .map((page, index) => {
         const pageText = normaliseText(page).trim();
+
         return pageText ? `--- Page ${index + 1} ---\n${pageText}` : "";
       })
       .filter(Boolean);
@@ -417,6 +432,7 @@ const extractDocx = async (file: Buffer): Promise<string> => {
  * @param file - The raw document bytes.
  * @param fileType - The stored document type.
  * @param options - Extraction options, such as math-aware PDF parsing.
+ * @param options.hasMathFormula
  * @returns The extracted text, or an empty string for an unsupported type.
  */
 export const extractText = async (
@@ -431,6 +447,8 @@ export const extractText = async (
       return extractDocx(file);
     case "txt":
       return requireExtractedText(file.toString("utf8"), "Text file");
+    default:
+      throw new Error(`Unsupported document type: ${fileType}`);
   }
 };
 
@@ -601,6 +619,7 @@ const embedChunks = async (
       Math.ceil(chunk.content.length / 4),
       async () => {
         await beforeProviderCall();
+
         return embedText(chunk.content);
       },
     );
@@ -700,6 +719,8 @@ type Props = {
  * Run the ingestion pipeline for a queued document.
  *
  * @param props - The document identifier and the queue job tracking progress.
+ * @param props.documentId
+ * @param props.job
  * @returns Resolves once the document is ready and its chunks are stored.
  */
 export const processDocument = async ({

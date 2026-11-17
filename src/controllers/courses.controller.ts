@@ -36,6 +36,7 @@ export const getAllCourses = async (
 
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
+
     return;
   }
 
@@ -70,6 +71,7 @@ export const createCourse = async (
 
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
+
     return;
   }
 
@@ -79,6 +81,7 @@ export const createCourse = async (
     Array.isArray(req.body)
   ) {
     res.status(400).json({ error: "Invalid course data" });
+
     return;
   }
 
@@ -97,6 +100,7 @@ export const createCourse = async (
     (semester !== null && semester.length > 50)
   ) {
     res.status(400).json({ error: "Invalid course data" });
+
     return;
   }
 
@@ -108,6 +112,7 @@ export const createCourse = async (
 
     if (!course) {
       res.status(500).json({ error: "Failed to create course" });
+
       return;
     }
 
@@ -120,6 +125,7 @@ export const createCourse = async (
       error.code === "23505"
     ) {
       res.status(409).json({ error: "Course already exists" });
+
       return;
     }
 
@@ -146,6 +152,7 @@ export const getCourseById = async (
 
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
+
     return;
   }
 
@@ -153,6 +160,7 @@ export const getCourseById = async (
 
   if (typeof courseID !== "string" || !z.uuid().safeParse(courseID).success) {
     res.status(400).json({ error: "Invalid course ID" });
+
     return;
   }
 
@@ -164,6 +172,7 @@ export const getCourseById = async (
 
     if (!course) {
       res.status(404).json({ error: "Course not found" });
+
       return;
     }
 
@@ -192,6 +201,7 @@ export const deleteCourse = async (
 
   if (!userID) {
     res.status(401).json({ error: "Unauthorized user" });
+
     return;
   }
 
@@ -199,6 +209,7 @@ export const deleteCourse = async (
 
   if (typeof courseID !== "string" || !z.uuid().safeParse(courseID).success) {
     res.status(400).json({ error: "Invalid course ID" });
+
     return;
   }
 
@@ -210,6 +221,7 @@ export const deleteCourse = async (
 
     if (!course) {
       res.status(404).json({ error: "Course not found" });
+
       return;
     }
 
@@ -237,6 +249,7 @@ export const deleteCourse = async (
       courseSets.length > 0
     ) {
       res.status(409).json({ error: "Course has dependent records" });
+
       return;
     }
 
@@ -253,6 +266,7 @@ export const deleteCourse = async (
       error.code === "23503"
     ) {
       res.status(409).json({ error: "Course has dependent records" });
+
       return;
     }
 
@@ -260,7 +274,11 @@ export const deleteCourse = async (
   }
 };
 
-/** PATCH /api/courses/:id — rename an owned course. */
+/**
+ * PATCH /api/courses/:id — rename an owned course.
+ * @param req
+ * @param res
+ */
 export const renameCourse = async (
   req: Request,
   res: Response,
@@ -269,6 +287,7 @@ export const renameCourse = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -279,6 +298,7 @@ export const renameCourse = async (
 
   if (!id.success || !body.success) {
     res.status(400).json({ error: "Invalid course ID or name" });
+
     return;
   }
 
@@ -291,6 +311,7 @@ export const renameCourse = async (
 
     if (!course) {
       res.status(404).json({ error: "Course not found" });
+
       return;
     }
 

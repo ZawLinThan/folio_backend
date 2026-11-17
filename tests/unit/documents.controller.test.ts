@@ -70,6 +70,7 @@ function selectRows<T>(rows: T[]) {
   const orderBy = jest.fn().mockResolvedValue(rows);
   const where = jest.fn(() => ({ limit, orderBy }));
   const from = jest.fn(() => ({ where }));
+
   return { from };
 }
 

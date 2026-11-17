@@ -33,7 +33,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/notebooks", protectRoute, notebooksRouter);
-app.use("/api/documents",protectRoute, documentsRouter);
+app.use("/api/documents", protectRoute, documentsRouter);
 app.use("/api/chat", protectRoute, chatRouter);
 app.use("/api/flashcards", protectRoute, flashcardsRouter);
 app.use("/api/tests", protectRoute, testsRouter);
