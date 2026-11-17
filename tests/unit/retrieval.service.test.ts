@@ -25,6 +25,7 @@ const queueQuery = (rows: unknown[]) => {
       Promise.resolve(rows).then(resolve),
   };
   jest.mocked(db.select).mockReturnValueOnce(query as never);
+
   return query;
 };
 

@@ -6,9 +6,11 @@ import { Sentry } from "../config/sentry.js";
 /**
  * @description Middleware to protect routes by checking for a valid session.
  * If the session is invalid or missing, it responds with a 401 Unauthorized status.
- * The income req object will have a Bearer token in the Authorization header, which will be verified to ensure the user is authenticated.
+ * The income req object will have a Bearer token in the Authorization header,
+ * which will be verified to ensure the user is authenticated.
  * Verify the token using Supabase's auth API
- * Attach the @link User object to the req for downstream handlers to use. // see express.d.ts for the type definition of the User object
+ * Attach the @link User object to the req for downstream handlers to use.
+ * See express.d.ts for the type definition of the User object
  * Error format: { error: "Your error message here" }
  *
  * @param req - Express Request object
@@ -25,6 +27,7 @@ export const protectRoute = async (
 
   if (!match) {
     res.status(401).json({ error: "Missing or malformed Bearer token" });
+
     return;
   }
 
@@ -35,6 +38,7 @@ export const protectRoute = async (
       res
         .status(401)
         .json({ error: "Invalid or expired session. Please sign in again." });
+
       return;
     }
 
@@ -50,6 +54,7 @@ export const protectRoute = async (
       },
     });
     res.status(503).json({ error: "Authentication service unavailable" });
+
     return;
   }
 

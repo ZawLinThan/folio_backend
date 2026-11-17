@@ -16,6 +16,9 @@ import {
   documents,
 } from "../db/schema.js";
 
+/**
+ *
+ */
 type RetrievedChunk = {
   chunkId: string;
   documentId: string;
@@ -29,6 +32,9 @@ type RetrievedChunk = {
 
 /** Embedding dimension (must be the same as ingestion)*/
 export const EMBEDDING_DIMENSIONS = 2048;
+/**
+ *
+ */
 export type EmbedQuery = (question: string) => Promise<number[]>;
 
 const questionSchema = z.string().trim().min(1).max(8000);
@@ -107,6 +113,11 @@ export const getSessionDocumentIds = async (
 /**
  * Search chunks of owned, ready documents using cosine similarity.
  * @param options Query vector, authenticated user, allowed documents, limit (1–50), and optional score floor (-1–1).
+ * @param options.userId
+ * @param options.documentIds
+ * @param options.embedding
+ * @param options.topK
+ * @param options.minScore
  * @returns Up to topK passages, best first; score equals 1 minus cosine distance.
  * @throws For invalid options or database failures.
  */
@@ -164,6 +175,12 @@ export const searchSimilarChunks = async (options: {
 /**
  * Retrieve sources for answerQuestion before generating the assistant response.
  * @param options Authenticated user, session, question, shared embedding adapter, and search settings.
+ * @param options.userId
+ * @param options.sessionId
+ * @param options.question
+ * @param options.embedQuery
+ * @param options.topK
+ * @param options.minScore
  * @returns Ranked passages or [] when no ready documents or matches exist.
  * @throws For invalid input, inaccessible sessions, embedding failures, or database failures.
  */

@@ -77,6 +77,7 @@ afterEach(() => {
   ): void => {
     if (originalValue === undefined) {
       delete process.env[name];
+
       return;
     }
 
@@ -97,6 +98,7 @@ const mineruChild = () => {
   child.kill = jest.fn();
   child.stdout = new EventEmitter();
   child.stderr = new EventEmitter();
+
   return child;
 };
 
@@ -136,6 +138,7 @@ const createPdf = (text: string): Buffer => {
 const createDocx = async (documentXml: string): Promise<Buffer> => {
   const archive = new JSZip();
   archive.file("word/document.xml", documentXml);
+
   return archive.generateAsync({ type: "nodebuffer" });
 };
 
@@ -157,6 +160,7 @@ it("uses local MinerU Markdown for a PDF explicitly marked as containing formula
     void writeFile(outputPath, "# Notes\n\n$$\\frac{r}{1-r}$$\n", "utf8").then(
       () => child.emit("close", 0, null),
     );
+
     return child as never;
   });
 
@@ -187,6 +191,7 @@ it("does not fall back to lossy PDF text when MinerU fails", async () => {
       child.stderr.emit("data", Buffer.from("model unavailable"));
       child.emit("close", 1, null);
     });
+
     return child as never;
   });
 

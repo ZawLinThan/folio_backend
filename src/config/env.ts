@@ -9,7 +9,7 @@ const envSchema = z.object({
   SUPABASE_PUBLISHABLE_KEY: z.string().trim().min(1),
   SUPABASE_SECRET_KEY: z.string().trim().min(1),
   SUPABASE_JWKS_URL: z.url(),
-  DATABASE_URL: z.url(),
+  DATABASE_URL: z.url().trim().min(1),
   FRONTEND_URL: z.url().default("http://localhost:5173"),
   R2_ENDPOINT: z.url(),
   R2_ACCESS_KEY_ID: z.string().trim().min(1),

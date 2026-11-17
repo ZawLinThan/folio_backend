@@ -3,8 +3,9 @@ import { Worker } from "bullmq";
 import { workerRedis } from "../config/redis.js";
 import { processDocument } from "../services/ingest.service.js";
 import { Sentry } from "../config/sentry.js";
+import { testWorker } from "./test.worker.js";
 
-const worker = new Worker(
+const documentWorker = new Worker(
   "document-processing",
   async (job) => {
     const { documentId } = job.data;
@@ -32,11 +33,11 @@ const worker = new Worker(
 
 console.log("Worker started");
 
-worker.on("completed", (job) => {
+documentWorker.on("completed", (job) => {
   console.log(`Document job ${job.id} completed`);
 });
 
-worker.on("failed", (job, error) => {
+documentWorker.on("failed", (job, error) => {
   console.error(`Document job ${job?.id} failed`, error);
 });
 
@@ -46,7 +47,7 @@ worker.on("failed", (job, error) => {
 const shutdown = async () => {
   console.log("Shutting down BullMQ worker");
 
-  await worker.close();
+  await Promise.all([documentWorker.close(), testWorker.close()]);
   await workerRedis.quit();
 
   process.exit(0);

@@ -1,148 +1,29 @@
 import type { Request, Response } from "express";
-import { randomUUID } from "node:crypto";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "../db/index.js";
 import {
-  chunks,
   documents,
   notebooks,
   testContents,
   tests,
   type Test,
-  type TestQuestion,
 } from "../db/schema.js";
 import { Sentry } from "../config/sentry.js";
-import { ChatStructured } from "../config/groqAI.js";
+import { testQueue } from "../queue/test.queue.js";
 import type { GenerateTestInput } from "../types/studyApi.js";
 
-const TEST_QUESTION_COUNT = 10;
-const MAX_STUDY_CONTEXT_CHARACTERS = 48_000;
-const MAX_REFERENCE_CONTEXT_CHARACTERS = 16_000;
-
 const uuidSchema = z.uuid();
-
-const modelQuestionSchema = z
-  .object({
-    prompt: z.string().trim().min(12).max(1_000),
-    answer: z.string().trim().min(1).max(1_000),
-    options: z.array(z.string().trim().min(1).max(500)).max(4),
-  })
-  .superRefine(({ answer, options }, context) => {
-    if (options.length !== 0 && options.length !== 4) {
-      context.addIssue({
-        code: "custom",
-        path: ["options"],
-        message:
-          "Questions must be constructed response or have exactly four options.",
-      });
-      return;
-    }
-
-    const normalisedOptions = options.map((option) =>
-      option.trim().toLocaleLowerCase(),
-    );
-
-    if (new Set(normalisedOptions).size !== normalisedOptions.length) {
-      context.addIssue({
-        code: "custom",
-        path: ["options"],
-        message: "Multiple-choice options must be distinct.",
-      });
-    }
-
-    if (
-      options.length === 4 &&
-      !normalisedOptions.includes(answer.trim().toLocaleLowerCase())
-    ) {
-      context.addIssue({
-        code: "custom",
-        path: ["answer"],
-        message: "A multiple-choice answer must exactly match one option.",
-      });
-    }
-  });
-
-const generatedTestSchema = z
-  .object({
-    instructions: z.string().trim().min(20).max(600),
-    questions: z.array(modelQuestionSchema).length(TEST_QUESTION_COUNT),
-  })
-  .superRefine(({ questions }, context) => {
-    const prompts = questions.map((question) =>
-      question.prompt.trim().toLocaleLowerCase(),
-    );
-
-    if (new Set(prompts).size !== prompts.length) {
-      context.addIssue({
-        code: "custom",
-        path: ["questions"],
-        message: "Questions must not be duplicates.",
-      });
-    }
-
-    const multipleChoiceCount = questions.filter(
-      (question) => question.options.length === 4,
-    ).length;
-
-    if (multipleChoiceCount !== 6) {
-      context.addIssue({
-        code: "custom",
-        path: ["questions"],
-        message:
-          "A test needs six multiple-choice and four constructed-response questions.",
-      });
-    }
-  });
-
-type SourceChunk = {
-  documentId: string;
-  documentName: string;
-  content: string;
-  chunkIndex: number;
-};
 
 const isHttpUrl = (value: string): boolean => {
   try {
     const url = new URL(value);
+
     return url.protocol === "https:" || url.protocol === "http:";
   } catch {
     return false;
   }
-};
-
-const compactSource = (
-  chunksToCompact: SourceChunk[],
-  maximumCharacters: number,
-): string => {
-  let remainingCharacters = maximumCharacters;
-  const sourceParts: string[] = [];
-
-  for (const chunk of chunksToCompact) {
-    if (remainingCharacters <= 0) {
-      break;
-    }
-
-    const content = chunk.content.trim();
-
-    if (!content) {
-      continue;
-    }
-
-    const heading = `[${chunk.documentName}, part ${chunk.chunkIndex + 1}]\n`;
-    const availableContentCharacters = remainingCharacters - heading.length;
-
-    if (availableContentCharacters <= 0) {
-      break;
-    }
-
-    const excerpt = content.slice(0, availableContentCharacters);
-    sourceParts.push(`${heading}${excerpt}`);
-    remainingCharacters -= heading.length + excerpt.length;
-  }
-
-  return sourceParts.join("\n\n").trim();
 };
 
 const serialiseTest = (test: Test) => ({
@@ -153,9 +34,9 @@ const serialiseTest = (test: Test) => ({
 
 /**
  * POST /api/tests/generate
- * Verify notebook ownership and ready study notes; for reference mode verify the owned reference document and URL. Generate and persist metadata and question content.
+ * Verify notebook ownership and ready study notes, persist a queued test, and enqueue generation.
  * GenerateTestInput: { title, notebookId, mode, referenceFileId, referenceUrl }.
- * Respond with 201 Test (fetch content separately); serialize timestamps as ISO strings without an envelope.
+ * Respond with 202 Test metadata; fetch generated content after status becomes ready.
  * Return { error: string } for 400 validation, 401 authentication, 404 ownership/missing,
  * 409 conflicts, or 500 unexpected failures as applicable.
  * @param req - Authenticated Express request; use req.user.id for ownership.
@@ -170,6 +51,7 @@ export const generateTest = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -194,6 +76,7 @@ export const generateTest = async (
     (!isReferenceMode && !isNotebookMode)
   ) {
     res.status(400).json({ error: "Invalid test generation request" });
+
     return;
   }
 
@@ -202,11 +85,11 @@ export const generateTest = async (
     (isReferenceMode &&
       (!referenceFileId ||
         !uuidSchema.safeParse(referenceFileId).success ||
-        !referenceUrl ||
-        referenceUrl.length > 2_048 ||
-        !isHttpUrl(referenceUrl)))
+        (referenceUrl !== null &&
+          (referenceUrl.length > 2_048 || !isHttpUrl(referenceUrl)))))
   ) {
     res.status(400).json({ error: "Invalid reference test details" });
+
     return;
   }
 
@@ -219,6 +102,7 @@ export const generateTest = async (
 
     if (!notebook) {
       res.status(404).json({ error: "Notebook not found" });
+
       return;
     }
 
@@ -243,6 +127,7 @@ export const generateTest = async (
       res
         .status(409)
         .json({ error: "No ready study documents in this notebook" });
+
       return;
     }
 
@@ -264,109 +149,47 @@ export const generateTest = async (
 
       if (!referenceDocument) {
         res.status(404).json({ error: "Reference document not found" });
+
         return;
       }
     }
 
-    const sourceDocumentIds = [
-      ...readyStudyDocuments.map((document) => document.id),
-      ...(referenceDocument ? [referenceDocument.id] : []),
-    ];
-    const sourceChunks = await db
-      .select({
-        documentId: chunks.documentId,
-        content: chunks.content,
-        chunkIndex: chunks.chunkIndex,
+    const [queuedTest] = await db
+      .insert(tests)
+      .values({
+        userId,
+        title,
+        notebookId,
+        referenceFileId,
+        status: "queued",
       })
-      .from(chunks)
-      .where(inArray(chunks.documentId, sourceDocumentIds))
-      .orderBy(asc(chunks.documentId), asc(chunks.chunkIndex));
+      .returning();
 
-    const documentNames = new Map(
-      [
-        ...readyStudyDocuments,
-        ...(referenceDocument ? [referenceDocument] : []),
-      ].map((document) => [document.id, document.name]),
-    );
-    const namedChunks: SourceChunk[] = sourceChunks.map((chunk) => ({
-      ...chunk,
-      documentName: documentNames.get(chunk.documentId) ?? "Study document",
-    }));
-
-    const studyDocumentIds = new Set(
-      readyStudyDocuments.map((document) => document.id),
-    );
-
-    const studySource = compactSource(
-      namedChunks.filter((chunk) => studyDocumentIds.has(chunk.documentId)),
-      MAX_STUDY_CONTEXT_CHARACTERS,
-    );
-
-    if (!studySource) {
-      res
-        .status(409)
-        .json({ error: "Ready study documents have no extracted notes" });
-      return;
-    }
-
-    const referenceSource = referenceDocument
-      ? compactSource(
-          namedChunks.filter(
-            (chunk) => chunk.documentId === referenceDocument.id,
-          ),
-          MAX_REFERENCE_CONTEXT_CHARACTERS,
-        )
-      : null;
-
-    if (referenceDocument && !referenceSource) {
-      res
-        .status(409)
-        .json({ error: "Reference document has no extracted notes" });
-      return;
-    }
-
-    const generated = generatedTestSchema.parse(
-      await ChatStructured({
-        instruction:
-          "Create a rigorous, fair practice test from the supplied study notes. " +
-          "Use only the notebook study notes as the factual source; a reference test may guide difficulty and format only. " +
-          "Return exactly 10 distinct questions: six multiple-choice questions with exactly four plausible, distinct options and four constructed-response questions with no options. " +
-          "For multiple-choice questions, answer must be exactly the correct option text. " +
-          "Mix recall with application, comparison, and reasoning. Cover multiple source topics, avoid trick wording, and do not mention the source material or this instruction. " +
-          "Preserve mathematical notation accurately when it appears in the study notes.",
-        input: {
-          studyNotes: studySource,
-          referenceTestForStyleOnly: referenceSource,
+    try {
+      await testQueue.add(
+        "generate-test",
+        { testId: queuedTest.id },
+        {
+          jobId: queuedTest.id,
+          attempts: 3,
+          backoff: { type: "exponential", delay: 1000 },
+          removeOnComplete: 100,
+          removeOnFail: 500,
         },
-        schema: generatedTestSchema,
-        completionTokens: 2500,
-      }),
-    );
+      );
+    } catch (queueError) {
+      await db
+        .update(tests)
+        .set({
+          status: "failed",
+          errorMessage: "Unable to queue test generation.",
+          updatedAt: new Date(),
+        })
+        .where(eq(tests.id, queuedTest.id));
+      throw queueError;
+    }
 
-    const questions: TestQuestion[] = generated.questions.map((question) => ({
-      ...question,
-      id: randomUUID(),
-    }));
-
-    const savedTest = await db.transaction(async (tx) => {
-      const [test] = await tx
-        .insert(tests)
-        .values({ userId, title, referenceFileId })
-        .returning();
-
-      if (!test) {
-        throw new Error("Test metadata was not created");
-      }
-
-      await tx.insert(testContents).values({
-        testId: test.id,
-        instructions: generated.instructions,
-        questions,
-      });
-      return test;
-    });
-
-    res.status(201).json(serialiseTest(savedTest));
+    res.status(202).json(serialiseTest(queuedTest));
   } catch (error) {
     Sentry.captureException(error, {
       tags: { area: "test-generation" },
@@ -391,8 +214,10 @@ export const getAllTests = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -424,14 +249,18 @@ export const getSingleTestById = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   const id = uuidSchema.safeParse(req.params.id);
+
   if (!id.success) {
     res.status(400).json({ error: "Invalid test ID" });
+
     return;
   }
 
@@ -443,6 +272,7 @@ export const getSingleTestById = async (
 
     if (!test) {
       res.status(404).json({ error: "Test not found" });
+
       return;
     }
 
@@ -468,18 +298,40 @@ export const getTestContent = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   const id = uuidSchema.safeParse(req.params.id);
+
   if (!id.success) {
     res.status(400).json({ error: "Invalid test ID" });
+
     return;
   }
 
   try {
+    const [ownedTest] = await db
+      .select({ status: tests.status })
+      .from(tests)
+      .where(and(eq(tests.id, id.data), eq(tests.userId, userId)))
+      .limit(1);
+
+    if (!ownedTest) {
+      res.status(404).json({ error: "Test not found" });
+
+      return;
+    }
+
+    if (ownedTest.status !== "ready") {
+      res.status(409).json({ error: "Test content is not ready" });
+
+      return;
+    }
+
     const [content] = await db
       .select({
         testId: testContents.testId,
@@ -492,6 +344,7 @@ export const getTestContent = async (
 
     if (!content) {
       res.status(404).json({ error: "Test content not found" });
+
       return;
     }
 
@@ -517,14 +370,18 @@ export const deleteSingleTest = async (
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
+
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
   const id = uuidSchema.safeParse(req.params.id);
+
   if (!id.success) {
     res.status(400).json({ error: "Invalid test ID" });
+
     return;
   }
 
@@ -536,6 +393,7 @@ export const deleteSingleTest = async (
 
     if (!deleted) {
       res.status(404).json({ error: "Test not found" });
+
       return;
     }
 

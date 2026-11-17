@@ -22,6 +22,7 @@ function setup(header?: string) {
     json: jest.fn(),
   } as unknown as Response;
   const next = jest.fn();
+
   return { req, res, next };
 }
 

@@ -1,3 +1,6 @@
+/**
+ *
+ */
 export type DocumentStatus =
   "pending" | "queued" | "processing" | "ready" | "failed";
 
@@ -12,12 +15,18 @@ export type Course = {
   createdAt: string;
   updatedAt: string;
 };
+/**
+ *
+ */
 export type NoteBook = {
   id: string;
   userId: string;
   noteBookName: string;
   courseId: string | null;
 };
+/**
+ *
+ */
 export type Document = {
   id: string;
   userId: string;
@@ -34,6 +43,9 @@ export type Document = {
   createdAt: string;
   updatedAt: string;
 };
+/**
+ *
+ */
 export type FlashcardSet = {
   id: string;
   userId: string;
@@ -43,6 +55,9 @@ export type FlashcardSet = {
   createdAt: string;
   updatedAt: string;
 };
+/**
+ *
+ */
 export type Flashcard = {
   id: string;
   setId: string;
@@ -56,10 +71,16 @@ export type Flashcard = {
   createdAt: string;
   updatedAt: string;
 };
+/**
+ *
+ */
 export type Test = {
   id: string;
   userId: string;
   title: string | null;
+  notebookId: string | null;
+  status: "queued" | "processing" | "ready" | "failed";
+  errorMessage: string | null;
   referenceFileId: string | null;
   createdAt: string;
   updatedAt: string;
@@ -70,14 +91,29 @@ export type SuccessfulPresignedUrlResponse = {
   key: string;
   expiresIn: number;
 };
+/**
+ *
+ */
 export type ApiError = { error: string };
+/**
+ *
+ */
 export type CreateCourseInput = Pick<Course, "name" | "code" | "semester">;
+/**
+ *
+ */
 export type CreateNotebookInput = Pick<NoteBook, "noteBookName"> & {
   courseId: string;
 };
+/**
+ *
+ */
 export type CreateSetInput = Pick<FlashcardSet, "title"> & {
   courseId: string | null;
 };
+/**
+ *
+ */
 export type CardInput = Pick<Flashcard, "front" | "back">;
 /** Request for POST /api/flashcards/generate. */
 export type GenerateFlashcardsInput = CreateSetInput & {
@@ -99,6 +135,9 @@ export type TestQuestion = {
   answer: string;
   options: string[];
 };
+/**
+ *
+ */
 export type TestContent = {
   testId: string;
   instructions: string;

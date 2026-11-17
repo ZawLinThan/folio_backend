@@ -26,6 +26,7 @@ export const getAllNotebooks = async (
 
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
+
       return;
     }
 
@@ -37,6 +38,7 @@ export const getAllNotebooks = async (
       (!courseId || !z.uuid().safeParse(courseId).success)
     ) {
       res.status(400).json({ error: "courseId must be a valid UUID." });
+
       return;
     }
 
@@ -49,6 +51,7 @@ export const getAllNotebooks = async (
 
       if (!course) {
         res.status(404).json({ error: "Course not found" });
+
         return;
       }
     }
@@ -90,6 +93,7 @@ export const createNotebook = async (
 
     if (!userId) {
       res.status(401).json({ error: "Unauthorized" });
+
       return;
     }
 
@@ -97,6 +101,7 @@ export const createNotebook = async (
 
     if (typeof courseId !== "string" || !z.uuid().safeParse(courseId).success) {
       res.status(400).json({ error: "courseId must be a valid UUID." });
+
       return;
     }
 
@@ -104,6 +109,7 @@ export const createNotebook = async (
 
     if (name.length < 1 || name.length > 255) {
       res.status(400).json({ error: "Enter a notebook name." });
+
       return;
     }
 
@@ -115,6 +121,7 @@ export const createNotebook = async (
 
     if (!course) {
       res.status(404).json({ error: "Course not found" });
+
       return;
     }
 
@@ -134,6 +141,7 @@ export const createNotebook = async (
       res
         .status(409)
         .json({ error: "A notebook with this name already exists." });
+
       return;
     }
 
@@ -150,7 +158,11 @@ export const createNotebook = async (
   }
 };
 
-/** PATCH /api/notebooks/:id — update the owned notebook's display name. */
+/**
+ * PATCH /api/notebooks/:id — update the owned notebook's display name.
+ * @param req
+ * @param res
+ */
 export const editNotebook = async (
   req: Request,
   res: Response,
@@ -159,6 +171,7 @@ export const editNotebook = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -169,6 +182,7 @@ export const editNotebook = async (
 
   if (!id.success || !body.success) {
     res.status(400).json({ error: "Invalid notebook ID or name" });
+
     return;
   }
 
@@ -181,6 +195,7 @@ export const editNotebook = async (
 
     if (!notebook) {
       res.status(404).json({ error: "Notebook not found" });
+
       return;
     }
 
@@ -203,6 +218,7 @@ export const editNotebook = async (
       res
         .status(409)
         .json({ error: "A notebook with this name already exists." });
+
       return;
     }
 
@@ -214,6 +230,7 @@ export const editNotebook = async (
 
     if (!updated) {
       res.status(404).json({ error: "Notebook not found" });
+
       return;
     }
 
@@ -224,7 +241,11 @@ export const editNotebook = async (
   }
 };
 
-/** DELETE /api/notebooks/:id — delete an empty, owned notebook. */
+/**
+ * DELETE /api/notebooks/:id — delete an empty, owned notebook.
+ * @param req
+ * @param res
+ */
 export const deleteNotebook = async (
   req: Request,
   res: Response,
@@ -233,6 +254,7 @@ export const deleteNotebook = async (
 
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });
+
     return;
   }
 
@@ -240,6 +262,7 @@ export const deleteNotebook = async (
 
   if (!id.success) {
     res.status(400).json({ error: "Invalid notebook ID" });
+
     return;
   }
 
@@ -252,6 +275,7 @@ export const deleteNotebook = async (
 
     if (!notebook) {
       res.status(404).json({ error: "Notebook not found" });
+
       return;
     }
 
@@ -270,6 +294,7 @@ export const deleteNotebook = async (
       res.status(409).json({
         error: "Remove the documents in this notebook before deleting it.",
       });
+
       return;
     }
 
