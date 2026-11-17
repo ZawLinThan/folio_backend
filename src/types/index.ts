@@ -21,18 +21,14 @@ export type ChatRequest<T> = {
  */
 export type Provider = "groq" | "openrouter" | "openrouter embedding"; // add here if more AI's are added
 
-/**
- *
- */
+/** Request body for creating a presigned document upload URL. */
 export type GetPresignedUrlReq = {
   fileName: string;
   contentType: string;
   size: number;
 };
 
-/**
- *
- */
+/** Request body for confirming an uploaded document and starting ingestion. */
 export type ConfirmFileUploadReq = {
   name: string;
   originalName: string;

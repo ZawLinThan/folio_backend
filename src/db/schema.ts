@@ -53,9 +53,7 @@ export const notebooks = pgTable("notebooks", {
   // fk: courseId -> courses(id)
 });
 
-/**
- *
- */
+/** Document ingestion lifecycle states stored in the database. */
 export type DocumentStatus =
   "pending" | "queued" | "processing" | "ready" | "failed";
 
@@ -257,9 +255,7 @@ export const tests = pgTable("tests", {
   // referenceFileId -> documentts(id)
 });
 
-/**
- *
- */
+/** A generated question stored inside a test content payload. */
 export type TestQuestion = {
   id: string;
   prompt: string;
@@ -280,110 +276,62 @@ export const testContents = pgTable("test_contents", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-/**
- *
- */
+/** A user profile row. */
 export type Profile = typeof profiles.$inferSelect;
-/**
- *
- */
+/** Insert shape for a user profile row. */
 export type NewProfile = typeof profiles.$inferInsert;
 
-/**
- *
- */
+/** A course row. */
 export type Course = typeof courses.$inferSelect;
-/**
- *
- */
+/** Insert shape for a course row. */
 export type NewCourse = typeof courses.$inferInsert;
 
-/**
- *
- */
+/** A document row. */
 export type Document = typeof documents.$inferSelect;
-/**
- *
- */
+/** Insert shape for a document row. */
 export type NewDocument = typeof documents.$inferInsert;
 
-/**
- *
- */
+/** A stored text chunk with its embedding. */
 export type Chunk = typeof chunks.$inferSelect;
-/**
- *
- */
+/** Insert shape for a chunk row. */
 export type NewChunk = typeof chunks.$inferInsert;
 
-/**
- *
- */
+/** A chat session row. */
 export type ChatSession = typeof chatSessions.$inferSelect;
-/**
- *
- */
+/** Insert shape for a chat session row. */
 export type NewChatSession = typeof chatSessions.$inferInsert;
 
-/**
- *
- */
+/** A chat message row. */
 export type Message = typeof messages.$inferSelect;
-/**
- *
- */
+/** Insert shape for a chat message row. */
 export type NewMessage = typeof messages.$inferInsert;
 
-/**
- *
- */
+/** A cited source linking a message to a chunk. */
 export type MessageSource = typeof messageSources.$inferSelect;
-/**
- *
- */
+/** Insert shape for a message source row. */
 export type NewMessageSource = typeof messageSources.$inferInsert;
 
-/**
- *
- */
+/** A flashcard set row. */
 export type FlashcardSet = typeof flashcardSets.$inferSelect;
-/**
- *
- */
+/** Insert shape for a flashcard set row. */
 export type NewFlashcardSet = typeof flashcardSets.$inferInsert;
 
-/**
- *
- */
+/** A flashcard row. */
 export type Flashcard = typeof flashcards.$inferSelect;
-/**
- *
- */
+/** Insert shape for a flashcard row. */
 export type NewFlashcard = typeof flashcards.$inferInsert;
 
-/**
- *
- */
+/** A test metadata row. */
 export type Test = typeof tests.$inferSelect;
-/**
- *
- */
+/** Insert shape for a test metadata row. */
 export type NewTest = typeof tests.$inferInsert;
 
-/**
- *
- */
+/** A test content row holding generated questions. */
 export type TestContent = typeof testContents.$inferSelect;
-/**
- *
- */
+/** Insert shape for a test content row. */
 export type NewTestContent = typeof testContents.$inferInsert;
 
-/**
- *
- */
+/** A notebook row. */
 export type NoteBook = typeof notebooks.$inferSelect;
-/**
- *
- */
+/** Insert shape for a notebook row. */
 export type NewNoteBook = typeof notebooks.$inferInsert;
