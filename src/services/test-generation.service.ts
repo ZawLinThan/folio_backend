@@ -3,7 +3,6 @@ import type { Job } from "bullmq";
 import { and, asc, eq, inArray, ne } from "drizzle-orm";
 import { z } from "zod";
 
-import { chatStructured } from "../config/groqAI.js";
 import { Sentry } from "../config/sentry.js";
 import { db } from "../db/index.js";
 import {
@@ -14,6 +13,7 @@ import {
   type TestQuestion,
 } from "../db/schema.js";
 import type { TestJob } from "../queue/test.queue.js";
+import { chatStructured } from "../config/openRouterAI.js";
 
 const MAX_STUDY_CHARACTERS = 48_000;
 const MAX_REFERENCE_CHARACTERS = 16_000;
