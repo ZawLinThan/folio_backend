@@ -9,6 +9,9 @@ export const testWorker = new Worker<TestJob>(
   "test-generation",
 
   async (job) => {
+    
+    console.log(`Processing test job ${job.id} for testId ${job.data.testId}`);
+
     return Sentry.startSpan(
       {
         name: "process-test",

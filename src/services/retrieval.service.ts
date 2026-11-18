@@ -16,9 +16,7 @@ import {
   documents,
 } from "../db/schema.js";
 
-/**
- *
- */
+/** A chunk returned by similarity search with its document metadata and score. */
 type RetrievedChunk = {
   chunkId: string;
   documentId: string;
@@ -32,9 +30,7 @@ type RetrievedChunk = {
 
 /** Embedding dimension (must be the same as ingestion)*/
 export const EMBEDDING_DIMENSIONS = 2048;
-/**
- *
- */
+/** Embeds a question with the same model used for document chunks. */
 export type EmbedQuery = (question: string) => Promise<number[]>;
 
 const questionSchema = z.string().trim().min(1).max(8000);
