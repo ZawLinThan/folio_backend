@@ -1,4 +1,8 @@
-import { expect, it } from "@jest/globals";
+import { expect, it, jest } from "@jest/globals";
+
+jest.mock("../../src/config/openRouterAI.js", () => ({
+  chatStructured: jest.fn(),
+}));
 
 import { compactTestSource } from "../../src/services/test-generation.service.js";
 

@@ -9,6 +9,10 @@ jest.mock("../../src/config/sentry.js", () => ({
   Sentry: { captureException: jest.fn() },
 }));
 
+jest.mock("../../src/config/openRouterAI.js", () => ({
+  chatStructured: jest.fn(),
+}));
+
 import { db } from "../../src/db/index.js";
 import { processTestGeneration } from "../../src/services/test-generation.service.js";
 import type { TestJob } from "../../src/queue/test.queue.js";
