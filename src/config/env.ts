@@ -19,7 +19,7 @@ const envSchema = z.object({
   GROQ_MODEL: z.string(), // take it out later
   EMBEDDING_MODEL: z.string().trim().min(1),
   OPENROUTER_API_KEY: z.string().trim().min(1),
-  REDIS_URL: z.url(),
+  REDIS_URL: z.string().trim().min(1),
   PROCESS_DOCUMENT_QUEUE: z.string().trim().min(1),
   SENTRY_DSN: z.url(),
 });
