@@ -612,6 +612,9 @@ const embedChunks = async (
   textChunks: readonly TextChunk[],
 ): Promise<EmbeddedChunk[]> => {
   const embedded: EmbeddedChunk[] = [];
+  let counter = 0;
+
+  console.log(`Embedding ${textChunks.length} chunks.`);
 
   for (const chunk of textChunks) {
     const embedding = await scheduleProviderRequest(
@@ -623,6 +626,8 @@ const embedChunks = async (
         return embedText(chunk.content);
       },
     );
+
+    console.log("Embedded chunk", ++counter, "of", textChunks.length);
 
     if (
       embedding.length !== EMBEDDING_DIMENSIONS ||
