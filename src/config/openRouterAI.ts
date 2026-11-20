@@ -239,7 +239,7 @@ export const embedText = async (text: string): Promise<number[]> => {
       }
     });
 
-    console.log(embedding.data[0].embedding.length);
+    // console.log(embedding.data[0].embedding.length);
 
     // Reject unexpected SDK response variants before reading the vector.
     if (
