@@ -233,13 +233,13 @@ export const embedText = async (text: string): Promise<number[]> => {
   try {
     const embedding = await openrouter.embeddings.generate({
       requestBody: {
-        model: env.EMBEDDING_MODEL,
-        input: text,
-        encodingFormat: "float",
-      },
+        model: "nvidia/nemotron-3-embed-1b:free",
+        input: [text],
+        encodingFormat: "float"
+      }
     });
 
-    //console.log(embedding.data[0].embedding.length);
+    console.log(embedding.data[0].embedding.length);
 
     // Reject unexpected SDK response variants before reading the vector.
     if (
